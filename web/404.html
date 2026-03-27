@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>404 - Lost Chicken | AIggs</title>
+  <meta name="description" content="Oops! This chicken farm doesn't exist. Let's get you back home."/>
+  <meta name="theme-color" content="#f59e0b"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='24'>🥚</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config={theme:{extend:{colors:{amber:{50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706',700:'#b45309',800:'#92400e',900:'#78350f'}},fontFamily:{sans:['Inter','system-ui','sans-serif']},animation:{'float':'float 3s ease-in-out infinite','bounce-soft':'bounceSoft 1.5s ease-in-out infinite','shake':'shake 0.5s ease-in-out infinite','spin-slow':'spin 20s linear infinite','drift':'drift 6s ease-in-out infinite'},keyframes:{float:{'0%,100%':{transform:'translateY(0)'},'50%':{transform:'translateY(-20px)'}},bounceSoft:{'0%,100%':{transform:'translateY(0)'},'50%':{transform:'translateY(-8px)'}},shake:{'0%,100%':{transform:'translateX(0)'},'25%':{transform:'translateX(-3px)'},'75%':{transform:'translateX(3px)'}},drift:{'0%,100%':{transform:'translateX(0) translateY(0)'},'25%':{transform:'translateX(12px) translateY(-8px)'},'50%':{transform:'translateX(0) translateY(-16px)'},'75%':{transform:'translateX(-12px) translateY(-8px)'}}}}}};
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      background: linear-gradient(135deg, #0f172a 0%, #1a1a2e 50%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* 背景装饰 */
+    .bg-decoration {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .floating-egg {
+      position: absolute;
+      border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
+      opacity: 0.08;
+      animation: drift 8s ease-in-out infinite;
+    }
+
+    .egg-1 {
+      width: 120px;
+      height: 150px;
+      background: radial-gradient(ellipse at 38% 30%, #fffbeb, #fde68a 40%, #f59e0b 75%, #b45309);
+      top: 5%;
+      left: 5%;
+      animation-delay: 0s;
+    }
+
+    .egg-2 {
+      width: 80px;
+      height: 100px;
+      background: radial-gradient(ellipse at 38% 30%, #fffbeb, #fde68a 40%, #f59e0b 75%, #b45309);
+      top: 15%;
+      right: 10%;
+      animation-delay: 2s;
+      animation: drift 10s ease-in-out infinite 2s;
+    }
+
+    .egg-3 {
+      width: 100px;
+      height: 125px;
+      background: radial-gradient(ellipse at 38% 30%, #fffbeb, #fde68a 40%, #f59e0b 75%, #b45309);
+      bottom: 20%;
+      left: 8%;
+      animation-delay: 4s;
+      animation: drift 12s ease-in-out infinite 4s;
+    }
+
+    .egg-4 {
+      width: 90px;
+      height: 115px;
+      background: radial-gradient(ellipse at 38% 30%, #fffbeb, #fde68a 40%, #f59e0b 75%, #b45309);
+      bottom: 10%;
+      right: 12%;
+      animation-delay: 1s;
+      animation: drift 9s ease-in-out infinite 1s;
+    }
+
+    /* 迷路的小鸡 */
+    .lost-chicken {
+      position: relative;
+      display: inline-block;
+    }
+
+    .chicken-body {
+      width: 80px;
+      height: 60px;
+      background: #f59e0b;
+      border-radius: 50% 50% 45% 45%;
+      position: relative;
+      display: inline-block;
+      box-shadow:
+        inset -3px -3px 8px rgba(0, 0, 0, 0.2),
+        0 8px 20px rgba(217, 119, 6, 0.3);
+      animation: bounce-soft 1.5s ease-in-out infinite;
+    }
+
+    .chicken-head {
+      width: 28px;
+      height: 28px;
+      background: #f59e0b;
+      border-radius: 50%;
+      position: absolute;
+      top: -12px;
+      left: 26px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      animation: shake 0.5s ease-in-out infinite;
+    }
+
+    .chicken-eye {
+      width: 4px;
+      height: 4px;
+      background: #000;
+      border-radius: 50%;
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    .chicken-beak {
+      width: 8px;
+      height: 4px;
+      background: #d97706;
+      border-radius: 50%;
+      position: absolute;
+      top: 14px;
+      left: 18px;
+    }
+
+    .chicken-wing {
+      width: 25px;
+      height: 35px;
+      background: #d97706;
+      border-radius: 50% 30% 30% 50%;
+      position: absolute;
+      top: 10px;
+      right: -8px;
+      transform: rotate(-15deg);
+      box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.15);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .chicken-legs {
+      position: absolute;
+      bottom: -12px;
+      left: 20px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .chicken-leg {
+      width: 2px;
+      height: 12px;
+      background: #d97706;
+      border-radius: 1px;
+      animation: shake 0.4s ease-in-out infinite;
+    }
+
+    .chicken-leg:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .chicken-foot {
+      position: absolute;
+      bottom: -3px;
+      left: -4px;
+      width: 10px;
+      height: 3px;
+      background: #d97706;
+      border-radius: 50%;
+    }
+
+    /* 404 大号字体 */
+    .error-number {
+      position: relative;
+      font-size: clamp(4rem, 15vw, 8rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #f59e0b, #fcd34d, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+      margin: 0;
+      line-height: 1;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    /* 提示文字 */
+    .error-title {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      font-weight: 700;
+      color: #fff;
+      margin: 20px 0 10px 0;
+      text-align: center;
+    }
+
+    .error-subtitle {
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      color: #cbd5e1;
+      text-align: center;
+      margin: 0 0 30px 0;
+      max-width: 500px;
+    }
+
+    /* 按钮 */
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 14px 32px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+      text-decoration: none;
+    }
+
+    .btn-home:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.6);
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+
+    .btn-home:active {
+      transform: translateY(0);
+    }
+
+    /* 心情符号 */
+    .emotion {
+      display: inline-block;
+      font-size: 3rem;
+      margin: 0 20px;
+      animation: drift 6s ease-in-out infinite;
+    }
+
+    .emotion:nth-child(2) {
+      animation-delay: 0.5s;
+    }
+
+    .emotion:nth-child(3) {
+      animation-delay: 1s;
+    }
+
+    /* 关键帧 */
+    @keyframes drift {
+      0%, 100% {
+        transform: translateX(0) translateY(0);
+      }
+      25% {
+        transform: translateX(12px) translateY(-8px);
+      }
+      50% {
+        transform: translateX(0) translateY(-16px);
+      }
+      75% {
+        transform: translateX(-12px) translateY(-8px);
+      }
+    }
+
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0) rotateZ(0deg);
+      }
+      25% {
+        transform: translateX(-2px) rotateZ(-1deg);
+      }
+      75% {
+        transform: translateX(2px) rotateZ(1deg);
+      }
+    }
+
+    @keyframes blink {
+      0%, 90%, 100% {
+        opacity: 1;
+      }
+      95% {
+        opacity: 0;
+      }
+    }
+
+    /* 主容器 */
+    .container-404 {
+      text-align: center;
+      z-index: 10;
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      body {
+        padding: 20px;
+      }
+
+      .error-number {
+        font-size: 3.5rem;
+      }
+
+      .error-title {
+        font-size: 1.5rem;
+      }
+
+      .error-subtitle {
+        font-size: 0.95rem;
+      }
+
+      .chicken-body {
+        width: 60px;
+        height: 45px;
+      }
+
+      .chicken-head {
+        width: 22px;
+        height: 22px;
+        top: -10px;
+        left: 19px;
+      }
+
+      .btn-home {
+        padding: 12px 24px;
+        font-size: 0.95rem;
+      }
+    }
+
+    @media (max-height: 600px) {
+      .container-404 {
+        padding: 10px;
+      }
+
+      .error-number {
+        font-size: 2.5rem;
+      }
+
+      .error-title {
+        font-size: 1.2rem;
+        margin: 10px 0 5px 0;
+      }
+
+      .error-subtitle {
+        margin: 0 0 20px 0;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景装饰 -->
+  <div class="bg-decoration">
+    <div class="floating-egg egg-1"></div>
+    <div class="floating-egg egg-2"></div>
+    <div class="floating-egg egg-3"></div>
+    <div class="floating-egg egg-4"></div>
+  </div>
+
+  <!-- 主容器 -->
+  <div class="container-404">
+    <!-- 404 数字 -->
+    <div class="error-number">404</div>
+
+    <!-- 迷路的小鸡 -->
+    <div style="margin: 30px 0; position: relative; height: 100px; display: flex; align-items: center; justify-content: center;">
+      <div class="lost-chicken">
+        <div class="chicken-body">
+          <div class="chicken-wing"></div>
+          <div class="chicken-legs">
+            <div class="chicken-leg">
+              <div class="chicken-foot"></div>
+            </div>
+            <div class="chicken-leg">
+              <div class="chicken-foot"></div>
+            </div>
+          </div>
+        </div>
+        <div class="chicken-head">
+          <div class="chicken-eye"></div>
+          <div class="chicken-beak"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 文字 -->
+    <h1 class="error-title">迷路的小鸡</h1>
+    <p class="error-subtitle">
+      这只小鸡找不到农场了。看起来你访问的页面也迷路了。
+    </p>
+
+    <!-- 心情符号 -->
+    <div style="margin: 20px 0; font-size: 1.2rem; color: #94a3b8;">
+      <span class="emotion">🥚</span>
+      <span class="emotion">🐔</span>
+      <span class="emotion">🥚</span>
+    </div>
+
+    <!-- 返回按钮 -->
+    <a href="/" class="btn-home">
+      <span>🏠</span>
+      <span>回到首页养鸡</span>
+    </a>
+
+    <!-- 帮助链接 -->
+    <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">
+        需要帮助？试试这些：
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+        <a href="/" style="color: #f59e0b; text-decoration: none; font-size: 0.85rem; transition: color 0.3s; border: 1px solid #f59e0b; padding: 8px 12px; border-radius: 6px; display: inline-block;">
+          官网首页
+        </a>
+        <a href="/whitepaper" style="color: #f59e0b; text-decoration: none; font-size: 0.85rem; transition: color 0.3s; border: 1px solid #f59e0b; padding: 8px 12px; border-radius: 6px; display: inline-block;">
+          白皮书
+        </a>
+        <a href="https://github.com/Imrogerli/aiggs-web" target="_blank" rel="noopener noreferrer" style="color: #f59e0b; text-decoration: none; font-size: 0.85rem; transition: color 0.3s; border: 1px solid #f59e0b; padding: 8px 12px; border-radius: 6px; display: inline-block;">
+          GitHub
+        </a>
+        <a href="https://discord.gg/aiggs" target="_blank" rel="noopener noreferrer" style="color: #f59e0b; text-decoration: none; font-size: 0.85rem; transition: color 0.3s; border: 1px solid #f59e0b; padding: 8px 12px; border-radius: 6px; display: inline-block;">
+          Discord 社区
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 脚本 -->
+  <script>
+    // 复活节彩蛋：点击小鸡时有惊喜
+    const chicken = document.querySelector('.lost-chicken');
+    let clickCount = 0;
+
+    if (chicken) {
+      chicken.style.cursor = 'pointer';
+      chicken.addEventListener('click', () => {
+        clickCount++;
+        chicken.style.animation = 'none';
+        setTimeout(() => {
+          chicken.style.animation = 'shake 0.5s ease-in-out 3';
+        }, 10);
+
+        if (clickCount >= 5) {
+          // 5 次点击后显示惊喜
+          const messages = [
+            '小鸡：我找到回家的路了！',
+            '小鸡：谢谢你的帮助！',
+            '小鸡：来一起养鸡吧！',
+            '小鸡：EGGS 走起！'
+          ];
+
+          const message = messages[Math.floor(Math.random() * messages.length)];
+          alert(message);
+          clickCount = 0;
+        }
+      });
+    }
+
+    // 页面加载完成后添加过渡效果
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.style.opacity = '1';
+    });
+  </script>
+</body>
+</html>

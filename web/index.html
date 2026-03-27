@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>AIggs — AI-Native Onchain Chicken Farm Game | $AIGG Token</title>
+<meta name="description" content="Start with one chicken. Build your egg empire. AIggs is the first AI-native blockchain chicken farming game on Base with real value backing. Play free, earn $AIGG tokens."/>
+<meta name="keywords" content="AIggs, chicken farm game, blockchain, Base network, $AIGG token, AI native, NFT game, DeFi, play-to-earn, crypto game"/>
+<meta name="author" content="AIggs Team"/>
+<meta name="theme-color" content="#f59e0b"/>
+<meta property="og:title" content="AIggs — First AI-Native Onchain Chicken Farm" />
+<meta property="og:description" content="Start with one chicken. Build your egg empire. Every egg has real value. Play for free on Base blockchain." />
+<meta property="og:image" content="https://aiggs.xyz/og-image.png" />
+<meta property="og:url" content="https://aiggs.xyz/" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AIggs — AI Chicken Farming on Base" />
+<meta name="twitter:description" content="First AI-native blockchain game. Start with one chicken, build your egg empire. Play free, earn real rewards." />
+<meta name="twitter:image" content="https://aiggs.xyz/og-image.png" />
+<link rel="canonical" href="https://aiggs.xyz/" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='24'>🥚</text></svg>" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "AIggs",
+  "url": "https://aiggs.xyz",
+  "description": "First AI-native onchain chicken farming game",
+  "image": "https://aiggs.xyz/og-image.png",
+  "creator": {
+    "@type": "Organization",
+    "name": "AIggs Team"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "AIggs",
+  "description": "AI-native blockchain chicken farming game on Base network",
+  "url": "https://aiggs.xyz",
+  "image": "https://aiggs.xyz/og-image.png",
+  "applicationCategory": "GameApplication",
+  "gameServer": "https://aiggs.xyz",
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "USD",
+    "price": "0"
+  }
+}
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{amber:{50:'#fffbeb',100:'#fef3c7',200:'#fde68a',300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706',700:'#b45309',800:'#92400e',900:'#78350f'}},fontFamily:{sans:['Inter','system-ui','sans-serif']},animation:{'float':'float 3s ease-in-out infinite','float-slow':'float 5s ease-in-out infinite','pulse-glow':'pulseGlow 2s ease-in-out infinite','spin-slow':'spin 20s linear infinite','bounce-soft':'bounceSoft 1.5s ease-in-out infinite'},keyframes:{float:{'0%,100%':{transform:'translateY(0)'},'50%':{transform:'translateY(-12px)'}},pulseGlow:{'0%,100%':{boxShadow:'0 0 20px #f59e0b66'},'50%':{boxShadow:'0 0 50px #f59e0baa, 0 0 80px #f59e0b33'}},bounceSoft:{'0%,100%':{transform:'translateY(0)'},'50%':{transform:'translateY(-6px)'}}}}}};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;overflow-x:hidden;background:#fff}
+.grad-text{background:linear-gradient(135deg,#d97706,#f59e0b,#fcd34d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-bg{background:radial-gradient(ellipse 90% 70% at 50% 0%,#fffbeb 0%,#fff 65%)}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-d1{transition-delay:.1s}.reveal-d2{transition-delay:.2s}.reveal-d3{transition-delay:.3s}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.06);transition:transform .3s,box-shadow .3s}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.1)}
+.glow-card:hover{box-shadow:0 0 0 2px #f59e0b,0 8px 24px rgba(245,158,11,.15)}
+.egg-shape{position:relative;display:inline-block;border-radius:50% 50% 50% 50%/55% 55% 45% 45%;box-shadow:inset -5px -7px 18px rgba(0,0,0,.18),0 8px 24px rgba(217,119,6,.25)}
+.egg-shape::before{content:'';position:absolute;top:15%;left:18%;width:36%;height:22%;background:rgba(255,255,255,.45);border-radius:50%;transform:rotate(-28deg)}
+nav{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+#mobile-menu{max-height:0;opacity:0;overflow:hidden;transition:max-height .3s ease,opacity .3s ease}
+#mobile-menu.open{max-height:300px;opacity:1}
+.progress-track{height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#f59e0b,#fcd34d);transition:width 1.2s ease}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#d97706;border-radius:3px}
+/* Mobile optimization for touch targets and smaller screens */
+@media(max-width:428px){
+  body{font-size:15px}
+  nav.fixed{height:auto}
+  .max-w-6xl.mx-auto{padding:0.5rem}
+  nav .max-w-6xl.mx-auto{padding:0 0.75rem}
+  .px-5{padding-left:1rem;padding-right:1rem}
+  h1,h2,h3{line-height:1.2}
+  h1.text-5xl{font-size:clamp(1.875rem,5vw,2.25rem)}
+  h2.text-4xl{font-size:clamp(1.5rem,5vw,2rem)}
+  .px-8{padding-left:1rem;padding-right:1rem}
+  .py-4{padding-top:1rem;padding-bottom:1rem}
+  .py-2\.5{padding-top:0.5rem;padding-bottom:0.5rem}
+  .text-lg{font-size:0.95rem}
+  .text-sm{font-size:0.85rem}
+  .text-xs{font-size:0.75rem}
+  .pt-24{padding-top:1rem}
+  .mb-8{margin-bottom:1rem}
+  .mb-5{margin-bottom:0.75rem}
+  .mb-4{margin-bottom:0.5rem}
+  .gap-3{gap:0.5rem}
+  .gap-4{gap:0.75rem}
+  svg[width="34"]{width:28px;height:28px}
+  svg[width="110"]{max-width:80px;height:auto}
+  .min-h-\[200px\]{min-height:auto}
+  button,a[href]{min-height:44px;min-width:44px;padding:0.5rem}
+  .rounded-full{border-radius:999px}
+  .card{padding:16px;border-radius:12px}
+  .grid-cols-3{gap:12px;padding:0 1rem}
+  #warehouse-label{word-break:break-all}
+}
+/* Medium screens */
+@media(max-width:768px){
+  .hidden.md\:flex{display:none}
+  .md\:flex{display:none}
+  .md\:hidden{display:block}
+  .md\:text-7xl{font-size:2rem}
+  .md\:text-xl{font-size:0.95rem}
+  .md\:text-5xl{font-size:1.875rem}
+  .md\:text-4xl{font-size:1.5rem}
+  .md\:cols-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="fixed top-0 inset-x-0 z-50 bg-white/85 border-b border-gray-100">
+  <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3">
+      <svg width="34" height="34" viewBox="0 0 512 512" style="border-radius:22%">
+        <defs><radialGradient id="nb" cx="50%" cy="46%" r="54%"><stop offset="0%" stop-color="#0E0C18"/><stop offset="100%" stop-color="#07060F"/></radialGradient><linearGradient id="ns" x1=".28" y1="0" x2=".72" y2="1"><stop offset="0%" stop-color="#2C2010"/><stop offset="100%" stop-color="#150D04"/></linearGradient><radialGradient id="ny" cx="37%" cy="32%" r="66%"><stop offset="0%" stop-color="#FFFFF5"/><stop offset="28%" stop-color="#FDE68A"/><stop offset="76%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></radialGradient><filter id="ng"><feGaussianBlur stdDeviation="20" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <rect width="512" height="512" fill="url(#nb)" rx="90"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="url(#ns)"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="none" stroke="#D97706" stroke-width="3.5" opacity=".65"/>
+        <circle cx="256" cy="282" r="106" fill="#F59E0B" filter="url(#ng)"/>
+        <circle cx="256" cy="282" r="94" fill="url(#ny)"/>
+        <ellipse cx="224" cy="254" rx="30" ry="18" fill="white" opacity=".52" transform="rotate(-24,224,254)"/>
+      </svg>
+      <span class="font-black text-xl text-gray-900">AIggs</span>
+    </a>
+    <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+      <a href="#how" class="hover:text-amber-600 transition-colors">How It Works</a>
+      <a href="#steal" class="hover:text-amber-600 transition-colors">Steal Eggs</a>
+      <a href="#economy" class="hover:text-amber-600 transition-colors">Economy</a>
+      <a href="#suppliers" class="hover:text-amber-600 transition-colors">Suppliers</a>
+    </div>
+    <a href="#join" class="hidden md:flex bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm px-5 py-2.5 rounded-full transition-colors items-center gap-1">Start Farming →</a>
+    <button class="md:hidden p-2" onclick="document.getElementById('mobile-menu').classList.toggle('open')">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div id="mobile-menu" class="md:hidden bg-white border-t border-gray-100 px-5">
+    <div class="py-4 flex flex-col gap-4 text-sm font-medium text-gray-700">
+      <a href="#how" onclick="this.closest('#mobile-menu').classList.remove('open')">How It Works</a>
+      <a href="#steal" onclick="this.closest('#mobile-menu').classList.remove('open')">Steal Eggs</a>
+      <a href="#economy" onclick="this.closest('#mobile-menu').classList.remove('open')">Economy</a>
+      <a href="#suppliers" onclick="this.closest('#mobile-menu').classList.remove('open')">Suppliers</a>
+      <a href="#join" class="bg-amber-600 text-white font-bold px-5 py-2.5 rounded-full text-center">Start Farming →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-bg min-h-screen flex flex-col items-center justify-center pt-24 pb-16 px-5 relative overflow-hidden">
+  <!-- Bg floating eggs -->
+  <div class="absolute top-24 left-6 opacity-20 animate-float-slow pointer-events-none">
+    <div class="egg-shape w-12 h-14" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309)"></div>
+  </div>
+  <div class="absolute top-40 right-10 opacity-15 animate-float pointer-events-none" style="animation-delay:.8s">
+    <div class="egg-shape w-8 h-10" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309)"></div>
+  </div>
+  <div class="absolute bottom-32 left-14 opacity-10 animate-float-slow pointer-events-none" style="animation-delay:1.5s">
+    <div class="egg-shape w-8 h-10" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309)"></div>
+  </div>
+  <div class="absolute bottom-20 right-8 opacity-20 animate-float pointer-events-none" style="animation-delay:.3s">
+    <div class="egg-shape w-12 h-14" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309)"></div>
+  </div>
+
+  <div class="max-w-4xl mx-auto text-center relative z-10">
+    <div class="flex justify-center mb-8 animate-float">
+      <svg width="110" height="110" viewBox="0 0 512 512" class="animate-pulse-glow" style="border-radius:22%;filter:drop-shadow(0 8px 32px #d9770644)">
+        <defs><radialGradient id="hb" cx="50%" cy="46%" r="54%"><stop offset="0%" stop-color="#0E0C18"/><stop offset="100%" stop-color="#07060F"/></radialGradient><linearGradient id="hs" x1=".28" y1="0" x2=".72" y2="1"><stop offset="0%" stop-color="#2C2010"/><stop offset="100%" stop-color="#150D04"/></linearGradient><radialGradient id="hy" cx="37%" cy="32%" r="66%"><stop offset="0%" stop-color="#FFFFF5"/><stop offset="10%" stop-color="#FEF9C3"/><stop offset="28%" stop-color="#FDE68A"/><stop offset="52%" stop-color="#FCD34D"/><stop offset="76%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></radialGradient><filter id="hg" x="-55%" y="-55%" width="210%" height="210%"><feGaussianBlur stdDeviation="30" result="b"/><feColorMatrix in="b" type="matrix" values="2.2 0.9 0 0 0  1.0 0.5 0 0 0  0 0 0 0 0  0 0 0 0.65 0" result="t"/><feMerge><feMergeNode in="t"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <rect width="512" height="512" fill="url(#hb)" rx="90"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="url(#hs)"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="none" stroke="#D97706" stroke-width="3.5" opacity=".65"/>
+        <ellipse cx="206" cy="166" rx="46" ry="25" fill="white" opacity=".13" transform="rotate(-32,206,166)"/>
+        <circle cx="256" cy="282" r="106" fill="#F59E0B" filter="url(#hg)"/>
+        <circle cx="256" cy="282" r="94" fill="url(#hy)"/>
+        <circle cx="256" cy="282" r="94" fill="none" stroke="#FEF9C3" stroke-width="2" opacity=".35"/>
+        <ellipse cx="224" cy="254" rx="30" ry="18" fill="white" opacity=".52" transform="rotate(-24,224,254)"/>
+        <ellipse cx="300" cy="298" rx="11" ry="7" fill="white" opacity=".18"/>
+      </svg>
+    </div>
+
+    <h1 class="text-5xl md:text-7xl font-black text-gray-900 leading-[1.1] mb-5">
+      Start with <span class="grad-text">one chicken.</span><br/>Build your egg empire.
+    </h1>
+    <p class="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-8 leading-relaxed">
+      The first AI-powered blockchain chicken farm. Every egg costs something to produce.
+      Every token is backed by real eggs. Zero air, zero rug.
+    </p>
+
+    <div class="flex flex-wrap justify-center gap-3 mb-10">
+      <span class="bg-amber-50 border border-amber-200 text-amber-700 font-semibold text-sm px-4 py-2 rounded-full">🥚 Auto egg production</span>
+      <span class="bg-red-50 border border-red-200 text-red-600 font-semibold text-sm px-4 py-2 rounded-full">🛡 Steal &amp; defend</span>
+      <span class="bg-green-50 border border-green-200 text-green-700 font-semibold text-sm px-4 py-2 rounded-full">💰 Real egg redemption</span>
+      <span class="bg-blue-50 border border-blue-200 text-blue-700 font-semibold text-sm px-4 py-2 rounded-full">⛓ On-chain $AIGG</span>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="#join" class="bg-amber-600 hover:bg-amber-700 text-white font-black text-base px-8 py-4 rounded-full shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-amber-200">Start Farming Free →</a>
+      <a href="#how" class="border-2 border-gray-200 hover:border-amber-300 text-gray-700 font-bold text-base px-8 py-4 rounded-full transition-all hover:-translate-y-0.5">See How It Works</a>
+    </div>
+
+    <div class="mt-16 flex flex-col items-center gap-2 opacity-40">
+      <span class="text-xs text-gray-500 font-medium tracking-widest uppercase">Scroll</span>
+      <div class="w-px h-8 bg-gradient-to-b from-amber-500 to-transparent animate-bounce-soft"></div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAND -->
+<section class="bg-gray-900 py-14 px-5">
+  <div class="max-w-3xl mx-auto grid grid-cols-3 gap-6 text-center">
+    <div class="reveal"><div class="text-3xl md:text-4xl font-black text-amber-400 mb-1" data-count="500">0+</div><div class="text-xs text-gray-500">M AI Tool Users</div></div>
+    <div class="reveal reveal-d1"><div class="text-3xl md:text-4xl font-black text-amber-400 mb-1">$320B</div><div class="text-xs text-gray-500">Global Egg Market</div></div>
+    <div class="reveal reveal-d2"><div class="text-3xl md:text-4xl font-black text-amber-400 mb-1">0</div><div class="text-xs text-gray-500">Real Competitors</div></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="py-24 px-5 bg-white">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-amber-600 font-bold text-xs tracking-widest uppercase mb-3">How It Works</div>
+      <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">Three steps. That's it.</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">Your AI assistant runs the farm. You check in, count eggs, and plan your next raid.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Step 1 -->
+      <div class="card glow-card reveal text-center">
+        <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600 font-black">01</div>
+        <div class="flex justify-center mb-5">
+          <div class="egg-shape w-14 h-16 animate-float" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309)"></div>
+        </div>
+        <h3 class="font-black text-gray-900 text-lg mb-2">Join, Get a Chicken</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Send one message to your AI tool. Farm created instantly. One free hen — no wallet required.</p>
+        <div class="bg-gray-50 rounded-xl p-3 text-left">
+          <div class="text-xs text-amber-700 font-mono mb-1">→ "Join AIggs farm for me"</div>
+          <div class="text-xs text-green-600 font-mono">← Farm code: farm-x7k2 🎉</div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="card glow-card reveal reveal-d1 text-center">
+        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600 font-black">02</div>
+        <div class="relative flex justify-center mb-5">
+          <div class="egg-shape w-14 h-16 animate-bounce-soft" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309)"></div>
+          <div id="egg-badge" class="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">
+            <span id="egg-num">3</span>
+          </div>
+        </div>
+        <h3 class="font-black text-gray-900 text-lg mb-2">Eggs Auto-Produce</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">Server-side timer runs 24/7. +1 EGGS every 8h. Warehouse full = production pauses. No loss ever.</p>
+        <div>
+          <div class="flex justify-between text-xs text-gray-400 mb-1.5">
+            <span>Warehouse</span><span id="warehouse-label">18 / 30 EGGS</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="warehouse-bar" style="width:60%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="card glow-card reveal reveal-d2 text-center">
+        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 text-purple-600 font-black">03</div>
+        <div class="flex justify-center items-center gap-3 mb-5">
+          <div class="egg-shape w-12 h-14 animate-float" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309);animation-delay:.3s"></div>
+          <svg width="20" height="20" fill="none" stroke="#9ca3af" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <div class="w-12 h-12 bg-purple-900 rounded-xl flex items-center justify-center">
+            <span class="text-purple-300 font-black">$</span>
+          </div>
+        </div>
+        <h3 class="font-black text-gray-900 text-lg mb-2">Convert or Steal</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">30 EGGS → 1 $AIGG on-chain. Redeem for real eggs via suppliers. Or raid a neighbour's farm.</p>
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <div class="bg-amber-50 rounded-lg p-2 font-semibold text-amber-700">30 EGGS<br/>= 1 $AIGG</div>
+          <div class="bg-green-50 rounded-lg p-2 font-semibold text-green-700">1 $AIGG<br/>≈ 10 eggs</div>
+          <div class="bg-red-50 rounded-lg p-2 font-semibold text-red-600">2 steals<br/>/ day</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STEAL MECHANICS -->
+<section id="steal" class="py-24 px-5 bg-gray-50">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-red-500 font-bold text-xs tracking-widest uppercase mb-3">Steal Mechanics</div>
+      <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">The soul of the game.</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">Getting robbed creates emotion. Emotion drives daily retention. That's the whole model.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+      <!-- Chat simulator -->
+      <div class="reveal">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow overflow-hidden">
+          <div class="bg-gray-900 px-4 py-2.5 flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <span class="text-gray-500 text-xs font-mono ml-2">AI Farm Manager · aiggs.xyz</span>
+          </div>
+          <div class="p-5 font-mono text-sm space-y-2 min-h-[200px]" id="steal-chat" style="max-height:220px;overflow-y:auto">
+            <div class="text-gray-400">▶ Morning report loading...</div>
+            <div class="text-amber-600 font-bold">🌅 Dawn Farm · Day 14</div>
+            <div class="text-gray-600">Harvest: +3 EGGS</div>
+            <div class="text-red-500 font-bold">⚠ STOLEN: -6 EGGS (Night Farm · 22:47)</div>
+            <div class="text-gray-600">Balance: 24 / 30 EGGS</div>
+            <div class="text-gray-500 text-xs border-t border-gray-100 pt-2 mt-2">2 raid attempts available today →</div>
+          </div>
+          <div class="px-4 pb-4 flex gap-2">
+            <button id="steal-btn" onclick="doSteal()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">⚔ Raid Night Farm</button>
+            <button onclick="doDefend()" class="flex-1 border border-gray-200 hover:border-amber-300 text-gray-700 font-bold text-sm py-2.5 rounded-xl transition-colors">🐕 Deploy Guard</button>
+          </div>
+          <div id="steal-result" class="hidden px-4 pb-4">
+            <div id="steal-result-inner" class="rounded-xl p-3 text-sm font-bold text-center"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outcomes -->
+      <div class="space-y-4 reveal reveal-d1">
+        <h3 class="font-black text-gray-900 text-xl">3 possible outcomes</h3>
+        <div class="card">
+          <div class="flex items-center justify-between mb-2">
+            <div><span class="font-black text-amber-500 text-xl">15%</span><span class="font-bold text-gray-900 ml-2">Big Haul</span></div>
+            <span class="text-xl">🎉</span>
+          </div>
+          <div class="progress-track mb-1"><div class="progress-fill" style="width:15%;background:#f59e0b"></div></div>
+          <p class="text-xs text-gray-500">Steal 20–25% of target warehouse. Maximum loot.</p>
+        </div>
+        <div class="card">
+          <div class="flex items-center justify-between mb-2">
+            <div><span class="font-black text-green-500 text-xl">45%</span><span class="font-bold text-gray-900 ml-2">Success</span></div>
+            <span class="text-xl">✅</span>
+          </div>
+          <div class="progress-track mb-1"><div class="progress-fill" style="width:45%;background:#16a34a"></div></div>
+          <p class="text-xs text-gray-500">Steal 10–15%. Clean escape.</p>
+        </div>
+        <div class="card">
+          <div class="flex items-center justify-between mb-2">
+            <div><span class="font-black text-gray-400 text-xl">40%</span><span class="font-bold text-gray-900 ml-2">Empty Hands</span></div>
+            <span class="text-xl">😅</span>
+          </div>
+          <div class="progress-track mb-1"><div class="progress-fill" style="width:40%;background:#9ca3af"></div></div>
+          <p class="text-xs text-gray-500">Nothing stolen, not detected. Try again.</p>
+        </div>
+        <div class="bg-red-50 border border-red-100 rounded-xl p-4">
+          <div class="font-bold text-red-700 text-sm mb-1">⚔ Rival System</div>
+          <p class="text-xs text-red-600">Steal from the same farm 3× = auto-tagged Rivals. Your AI mentions them in every morning report. Grudges are permanent.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ECONOMY -->
+<section id="economy" class="py-24 px-5 bg-white">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-purple-600 font-bold text-xs tracking-widest uppercase mb-3">Tokenomics</div>
+      <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">Every egg has a real cost.</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">A price floor anchored to real egg market rates — enforced by arbitrage, not team wallets.</p>
+    </div>
+
+    <!-- Flow -->
+    <div class="reveal mb-14">
+      <div class="bg-gray-50 rounded-2xl p-6 md:p-8 overflow-x-auto">
+        <div class="flex items-center justify-between gap-2 min-w-[540px] md:min-w-0 max-w-2xl mx-auto">
+          <div class="text-center flex-1">
+            <div class="w-16 h-16 bg-amber-100 border-2 border-amber-300 rounded-2xl flex flex-col items-center justify-center mb-2 mx-auto">
+              <span class="text-xl">🤖</span><span class="text-xs font-bold text-amber-700">AI Tool</span>
+            </div>
+            <span class="text-xs text-gray-400">Claude / GPT</span>
+          </div>
+          <div class="text-gray-300 font-black text-lg">→</div>
+          <div class="text-center flex-1">
+            <div class="w-16 h-16 bg-green-100 border-2 border-green-300 rounded-2xl flex flex-col items-center justify-center mb-2 mx-auto">
+              <div class="egg-shape w-7 h-9 animate-bounce-soft" style="background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 70%,#b45309)"></div>
+            </div>
+            <span class="text-xs text-gray-400">+1 / 8h</span>
+          </div>
+          <div class="text-gray-300 font-black text-lg">→</div>
+          <div class="text-center flex-1">
+            <div class="w-16 h-16 bg-blue-100 border-2 border-blue-300 rounded-2xl flex flex-col items-center justify-center mb-2 mx-auto">
+              <span class="text-sm font-black text-blue-700">EGGS</span><span class="text-xs text-blue-500">off-chain</span>
+            </div>
+            <span class="text-xs text-gray-400">30 EGGS</span>
+          </div>
+          <div class="text-gray-300 font-black text-lg">→</div>
+          <div class="text-center flex-1">
+            <div class="w-16 h-16 bg-purple-100 border-2 border-purple-300 rounded-2xl flex flex-col items-center justify-center mb-2 mx-auto">
+              <span class="text-sm font-black text-purple-700">$AIGG</span><span class="text-xs text-purple-500">on-chain</span>
+            </div>
+            <span class="text-xs text-gray-400">Base</span>
+          </div>
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-4">Dynamic rate published daily · 60% of revenue = permanent LP (burned)</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <!-- Donut -->
+      <div class="reveal">
+        <h3 class="font-black text-gray-900 text-xl mb-6">$AIGG Supply — 1 Billion</h3>
+        <div class="flex items-center gap-8">
+          <div class="relative w-36 h-36 flex-shrink-0">
+            <svg viewBox="0 0 144 144" class="w-36 h-36 animate-spin-slow" style="-webkit-transform:rotate(-90deg);transform:rotate(-90deg)">
+              <circle cx="72" cy="72" r="52" fill="none" stroke="#D97706" stroke-width="24" stroke-dasharray="244.9 81.6" stroke-dashoffset="0"/>
+              <circle cx="72" cy="72" r="52" fill="none" stroke="#16A34A" stroke-width="24" stroke-dasharray="65.3 261.2" stroke-dashoffset="-244.9"/>
+              <circle cx="72" cy="72" r="52" fill="none" stroke="#7C3AED" stroke-width="24" stroke-dasharray="16.3 310.3" stroke-dashoffset="-310.2"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <div class="w-16 h-16 bg-white rounded-full flex flex-col items-center justify-center">
+                <div class="font-black text-gray-900 text-xs">$AIGG</div>
+                <div class="text-gray-400 text-xs">1B</div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-2.5"><div class="w-3 h-3 rounded-full bg-amber-600 flex-shrink-0"></div><div><div class="font-bold text-sm">75% Players</div><div class="text-xs text-gray-500">Farm to earn</div></div></div>
+            <div class="flex items-center gap-2.5"><div class="w-3 h-3 rounded-full bg-green-600 flex-shrink-0"></div><div><div class="font-bold text-sm">20% Team</div><div class="text-xs text-gray-500">2yr lock · quarterly vest</div></div></div>
+            <div class="flex items-center gap-2.5"><div class="w-3 h-3 rounded-full bg-purple-600 flex-shrink-0"></div><div><div class="font-bold text-sm">5% Airdrop</div><div class="text-xs text-gray-500">First 10k users</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Value anchors -->
+      <div class="reveal reveal-d1 space-y-3">
+        <h3 class="font-black text-gray-900 text-xl mb-6">Price Floor Mechanics</h3>
+        <div class="card glow-card"><div class="flex gap-3"><span class="text-2xl">🥚</span><div><div class="font-black text-sm mb-1">Physical Redemption Floor</div><p class="text-xs text-gray-500">1 $AIGG redeems ~10 real eggs. As long as eggs have value, $AIGG can't hit zero. Arbitrageurs enforce it automatically.</p></div></div></div>
+        <div class="card glow-card"><div class="flex gap-3"><span class="text-2xl">🔥</span><div><div class="font-black text-sm mb-1">Continuous Burn</div><p class="text-xs text-gray-500">Every item purchase burns $AIGG permanently. 60% of fiat revenue buys $AIGG and locks LP forever. More use = more scarcity.</p></div></div></div>
+        <div class="card glow-card"><div class="flex gap-3"><span class="text-2xl">📊</span><div><div class="font-black text-sm mb-1">On-Chain Transparency</div><p class="text-xs text-gray-500">All LP burned to 0x000. Rate published daily in every morning report. Contract immutable after deploy.</p></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUPPLIERS -->
+<section id="suppliers" class="py-24 px-5 bg-amber-50">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-amber-600 font-bold text-xs tracking-widest uppercase mb-3">Supplier Network</div>
+      <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">Real eggs. Real delivery.</h2>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto">Stake $AIGG to join as a supplier. Fulfil orders. Earn rewards. This is what makes every token real.</p>
+    </div>
+
+    <div id="supplier-tiers" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 reveal"></div>
+
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 reveal">
+      <h3 class="font-black text-gray-900 text-lg mb-5">Brand Partnership Roadmap</h3>
+      <div class="space-y-4">
+        <div class="flex gap-4"><div class="w-16 flex-shrink-0 text-xs font-bold text-green-600 pt-0.5">M 1–3</div><div class="border-l-2 border-green-200 pl-4"><div class="font-bold text-sm">Regional Artisan Egg Brands</div><div class="text-xs text-gray-500">Validate fulfilment · First real redemptions</div></div></div>
+        <div class="flex gap-4"><div class="w-16 flex-shrink-0 text-xs font-bold text-amber-600 pt-0.5">M 4–6</div><div class="border-l-2 border-amber-200 pl-4"><div class="font-bold text-sm">Viral Food Brands</div><div class="text-xs text-gray-500">Limited-edition collabs · Trend amplification</div></div></div>
+        <div class="flex gap-4"><div class="w-16 flex-shrink-0 text-xs font-bold text-blue-600 pt-0.5">M 7–12</div><div class="border-l-2 border-blue-200 pl-4"><div class="font-bold text-sm">Chain Restaurant Partners</div><div class="text-xs text-gray-500">National fulfilment coverage</div></div></div>
+        <div class="flex gap-4"><div class="w-16 flex-shrink-0 text-xs font-bold text-purple-600 pt-0.5">Year 1+</div><div class="border-l-2 border-purple-200 pl-4"><div class="font-bold text-sm">🍗 KFC · McDonald's · Major QSR</div><div class="text-xs text-gray-500">Golden Egg Festival · Nationwide activations</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JOIN CTA -->
+<section id="join" class="py-24 px-5 bg-gray-900 relative overflow-hidden">
+  <div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+    <div class="egg-shape" style="width:500px;height:600px;background:radial-gradient(ellipse at 38% 30%,#fffbeb,#fde68a 40%,#f59e0b 75%,#b45309)"></div>
+  </div>
+  <div class="max-w-2xl mx-auto text-center relative z-10 reveal">
+    <div class="flex justify-center mb-7 animate-float">
+      <svg width="80" height="80" viewBox="0 0 512 512" style="border-radius:20%;filter:drop-shadow(0 8px 32px #d9770644)">
+        <defs><radialGradient id="jb" cx="50%" cy="46%" r="54%"><stop offset="0%" stop-color="#0E0C18"/><stop offset="100%" stop-color="#07060F"/></radialGradient><linearGradient id="js" x1=".28" y1="0" x2=".72" y2="1"><stop offset="0%" stop-color="#2C2010"/><stop offset="100%" stop-color="#150D04"/></linearGradient><radialGradient id="jy" cx="37%" cy="32%" r="66%"><stop offset="0%" stop-color="#FFFFF5"/><stop offset="28%" stop-color="#FDE68A"/><stop offset="76%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></radialGradient><filter id="jg" x="-55%" y="-55%" width="210%" height="210%"><feGaussianBlur stdDeviation="30" result="b"/><feColorMatrix in="b" type="matrix" values="2.2 0.9 0 0 0  1.0 0.5 0 0 0  0 0 0 0 0  0 0 0 0.65 0" result="t"/><feMerge><feMergeNode in="t"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <rect width="512" height="512" fill="url(#jb)" rx="90"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="url(#js)"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="none" stroke="#D97706" stroke-width="3.5" opacity=".65"/>
+        <circle cx="256" cy="282" r="106" fill="#F59E0B" filter="url(#jg)"/>
+        <circle cx="256" cy="282" r="94" fill="url(#jy)"/>
+        <ellipse cx="224" cy="254" rx="30" ry="18" fill="white" opacity=".52" transform="rotate(-24,224,254)"/>
+      </svg>
+    </div>
+    <h2 class="text-4xl md:text-6xl font-black text-white leading-tight mb-4">AI farming,<br/><span class="grad-text">on-chain eggs.</span></h2>
+    <p class="text-gray-400 mb-2">Every token has real cost. Every egg has real demand.</p>
+    <p class="text-amber-400 italic text-sm mb-10">The features that come later only come when the data speaks.</p>
+
+    <div class="bg-white/10 border border-white/20 rounded-2xl p-6 backdrop-blur-sm mb-8">
+      <p class="text-white font-bold mb-4">Get early access</p>
+      <form id="signup-form" class="flex flex-col sm:flex-row gap-3">
+        <input type="email" id="email-input" placeholder="your@email.com" class="flex-1 bg-white/10 border border-white/30 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-400"/>
+        <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-white font-black px-6 py-3 rounded-xl text-sm transition-colors">Join Waitlist</button>
+      </form>
+      <div id="signup-success" class="hidden mt-3 text-green-400 text-sm font-medium">✓ You're on the list. We'll be in touch.</div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+      <div><div class="text-xl font-black text-amber-400">Wk 1–2</div><div class="text-xs text-gray-500">Eggs live</div></div>
+      <div><div class="text-xl font-black text-red-400">Wk 3–4</div><div class="text-xs text-gray-500">Steal live</div></div>
+      <div><div class="text-xl font-black text-green-400">Wk 5–8</div><div class="text-xs text-gray-500">$AIGG live</div></div>
+      <div><div class="text-xl font-black text-purple-400">Wk 9+</div><div class="text-xs text-gray-500">Growth</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-gray-950 py-8 px-5">
+  <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-2.5">
+      <svg width="24" height="24" viewBox="0 0 512 512" style="border-radius:20%">
+        <rect width="512" height="512" fill="#0E0C18" rx="90"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="#150D04"/>
+        <ellipse cx="256" cy="262" rx="152" ry="186" fill="none" stroke="#D97706" stroke-width="3.5" opacity=".65"/>
+        <circle cx="256" cy="282" r="94" fill="#F59E0B"/>
+        <ellipse cx="224" cy="254" rx="30" ry="18" fill="white" opacity=".4" transform="rotate(-24,224,254)"/>
+      </svg>
+      <span class="text-gray-600 text-sm">© 2025 AIggs · aiggs.xyz</span>
+    </div>
+    <div class="flex gap-5 text-sm text-gray-600">
+      <a href="#how" class="hover:text-amber-500 transition-colors">How It Works</a>
+      <a href="#economy" class="hover:text-amber-500 transition-colors">Economy</a>
+      <a href="#suppliers" class="hover:text-amber-500 transition-colors">Suppliers</a>
+      <a href="#join" class="hover:text-amber-500 transition-colors">Join</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Reveal on scroll
+const observer = new IntersectionObserver(e => e.forEach(el => { if(el.isIntersecting) el.target.classList.add('visible'); }), {threshold:.1});
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Animated warehouse bar
+let wh = 18;
+setInterval(() => {
+  wh = wh >= 30 ? 8 : wh + 1;
+  const pct = Math.round(wh/30*100);
+  const bar = document.getElementById('warehouse-bar');
+  const lbl = document.getElementById('warehouse-label');
+  const num = document.getElementById('egg-num');
+  if(bar) bar.style.width = pct + '%';
+  if(lbl) lbl.textContent = wh + ' / 30 EGGS';
+  if(num) num.textContent = wh;
+}, 1800);
+
+// Steal simulator
+function doSteal() {
+  const btn = document.getElementById('steal-btn');
+  btn.disabled = true; btn.textContent = '⏳ Raiding...';
+  setTimeout(() => {
+    const r = Math.random()*100;
+    const outcomes = [
+      {emoji:'🎉',title:'Big Haul!',msg:'Stole 8 EGGS from Night Farm.',bg:'bg-amber-50',border:'border-amber-200',text:'text-amber-800'},
+      {emoji:'✅',title:'Success!',msg:'Stole 4 EGGS. Clean escape.',bg:'bg-green-50',border:'border-green-200',text:'text-green-800'},
+      {emoji:'😅',title:'Empty Hands',msg:'Nothing stolen, not detected.',bg:'bg-gray-50',border:'border-gray-200',text:'text-gray-700'},
+    ];
+    const o = r < 15 ? outcomes[0] : r < 60 ? outcomes[1] : outcomes[2];
+    const ri = document.getElementById('steal-result-inner');
+    ri.className = `rounded-xl p-3 text-sm font-bold text-center border ${o.bg} ${o.border} ${o.text}`;
+    ri.textContent = o.emoji + ' ' + o.title + ' — ' + o.msg;
+    document.getElementById('steal-result').classList.remove('hidden');
+    const chat = document.getElementById('steal-chat');
+    const line = document.createElement('div');
+    line.className = r < 60 ? 'text-amber-600 font-bold' : 'text-gray-500';
+    line.textContent = o.emoji + ' ' + o.title;
+    chat.appendChild(line); chat.scrollTop = chat.scrollHeight;
+    btn.disabled = false; btn.textContent = '⚔ Raid Again';
+  }, 1100);
+}
+function doDefend() {
+  const chat = document.getElementById('steal-chat');
+  const line = document.createElement('div');
+  line.className = 'text-blue-500 font-bold';
+  line.textContent = '🐕 Guard deployed. Steal chance -20%.';
+  chat.appendChild(line); chat.scrollTop = chat.scrollHeight;
+}
+
+// Supplier tiers
+(function() {
+  const tiers = [
+    {tier:'Entry',stake:'500',fee:'8%',border:'border-gray-200',hover:'hover:border-gray-400',tc:'text-gray-600',bg:'bg-gray-50',bc:'text-gray-700'},
+    {tier:'Standard',stake:'2,000',fee:'6%',border:'border-teal-200',hover:'hover:border-teal-400',tc:'text-teal-600',bg:'bg-teal-50',bc:'text-teal-700'},
+    {tier:'Certified',stake:'8,000',fee:'5%',border:'border-amber-200',hover:'hover:border-amber-400',tc:'text-amber-600',bg:'bg-amber-50',bc:'text-amber-700'},
+    {tier:'Flagship',stake:'30,000',fee:'4%',border:'border-purple-200',hover:'hover:border-purple-400',tc:'text-purple-600',bg:'bg-purple-50',bc:'text-purple-700'},
+  ];
+  const c = document.getElementById('supplier-tiers');
+  if(!c) return;
+  c.innerHTML = tiers.map((t,i) => `
+    <div class="bg-white rounded-2xl border-2 ${t.border} ${t.hover} p-4 text-center transition-colors reveal reveal-d${i}">
+      <div class="font-black ${t.tc} text-sm mb-1">${t.tier}</div>
+      <div class="font-black text-gray-900 text-xl mb-1">${t.stake}</div>
+      <div class="text-xs text-gray-500 mb-2">$AIGG stake</div>
+      <span class="${t.bg} rounded-full px-3 py-1 text-xs font-bold ${t.bc}">${t.fee} fee</span>
+    </div>`).join('');
+  c.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+})();
+
+// Email signup
+document.getElementById('signup-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = document.getElementById('email-input');
+  if(!input.value.includes('@')) return;
+  input.disabled = true;
+  e.target.querySelector('button').disabled = true;
+  document.getElementById('signup-success').classList.remove('hidden');
+});
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const t = document.querySelector(a.getAttribute('href'));
+    if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+</script>
+</body>
+</html>

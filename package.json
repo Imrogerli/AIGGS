@@ -1,0 +1,54 @@
+{
+  "name": "aiggs-migration-pipeline",
+  "version": "1.0.0",
+  "description": "AIggs 数据库迁移管道 - 生产级 TypeScript 实现",
+  "main": "dist/migration-pipeline.js",
+  "types": "dist/migration-pipeline.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node",
+    "migration:init": "ts-node migration-cli.ts init",
+    "migration:generate": "ts-node migration-cli.ts generate",
+    "migration:execute": "ts-node migration-cli.ts execute",
+    "migration:rollback": "ts-node migration-cli.ts rollback",
+    "migration:status": "ts-node migration-cli.ts status",
+    "migration:history": "ts-node migration-cli.ts history",
+    "backup:create": "ts-node migration-cli.ts backup",
+    "backup:verify": "ts-node migration-cli.ts verify-backup",
+    "backup:cleanup": "ts-node migration-cli.ts cleanup-backups",
+    "example:run": "ts-node migration-examples.ts",
+    "test": "jest --coverage",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "aiggs",
+    "migration",
+    "database",
+    "postgresql",
+    "devops"
+  ],
+  "author": "AIggs Team",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.10.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.10.7",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.1",
+    "jest": "^29.5.0",
+    "@types/jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.45.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

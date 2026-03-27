@@ -1,0 +1,1485 @@
+# ============================================================================
+# AIggs K8s 完整部署配置
+# 项目：首个 AI 原生链上养鸡农场游戏
+# 环境：生产环境（支撑 100 万用户）
+# 部署方式：kubectl apply -f aiggs-k8s-deployment.yaml
+# ============================================================================
+
+---
+# ============================================================================
+# 命名空间
+# ============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aiggs
+  labels:
+    name: aiggs
+
+---
+# ============================================================================
+# 配置管理 - ConfigMap
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-config
+  namespace: aiggs
+data:
+  # 游戏配置
+  EGG_PRODUCTION_INTERVAL: "28800"  # 8 小时，单位秒
+  EGG_PRODUCTION_AMOUNT: "10"        # 每次产蛋数量
+  DAILY_REPORT_TIME: "04:00"         # 每日报告时间
+  STEAL_COOLDOWN_MINUTES: "5"        # 偷蛋冷却时间
+  EXCHANGE_RATE: "1000"              # 1 $AIGG = 1000 EGGS
+
+  # 数据库配置
+  DATABASE_MAX_CONNECTIONS: "200"
+  DATABASE_POOL_TIMEOUT: "30"
+
+  # Redis 配置
+  REDIS_MAX_RETRIES: "3"
+  REDIS_TIMEOUT: "5000"
+
+  # MCP 网关配置
+  MCP_REQUEST_TIMEOUT: "30"
+  MCP_MAX_CONCURRENT_REQUESTS: "1000"
+
+  # 告警阈值
+  ALERT_ERROR_RATE_THRESHOLD: "0.05"  # 5%
+  ALERT_P99_LATENCY_MS: "2000"         # 2s
+
+---
+# ============================================================================
+# 密钥管理 - Secret
+# ============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aiggs-secrets
+  namespace: aiggs
+type: Opaque
+stringData:
+  # 数据库凭证（Base64 编码，实际部署时应使用 Vault）
+  DB_PASSWORD: "generate-secure-password-here"
+  REDIS_PASSWORD: "generate-redis-password-here"
+  RABBITMQ_PASSWORD: "generate-rabbitmq-password-here"
+
+  # Base 链配置
+  BASE_RPC_URL: "https://mainnet.base.org"
+  BASE_PRIVATE_KEY: "your-private-key-here"
+
+  # MCP 配置
+  CLAUDE_API_KEY: "sk-your-api-key-here"
+  GPT_API_KEY: "sk-gpt-api-key-here"
+
+---
+# ============================================================================
+# PostgreSQL StatefulSet - 主从复制架构
+# ============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: aiggs
+  labels:
+    app: postgres
+    tier: database
+spec:
+  serviceName: postgres
+  replicas: 4  # 1 主 + 3 从
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+        tier: database
+    spec:
+      affinity:
+        # Pod 反亲和性：确保各个 Pod 分散在不同节点
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - postgres
+              topologyKey: kubernetes.io/hostname
+
+        # 节点亲和性：优先选择高性能节点
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role
+                    operator: In
+                    values:
+                      - database
+
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: db
+              containerPort: 5432
+              protocol: TCP
+
+          env:
+            - name: POSTGRES_DB
+              value: aiggs
+            - name: POSTGRES_USER
+              value: aiggs_user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: DB_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          # 资源限制
+          resources:
+            requests:
+              cpu: 2
+              memory: 4Gi
+            limits:
+              cpu: 4
+              memory: 8Gi
+
+          # 就绪探针
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U aiggs_user
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+          # 存活探针
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U aiggs_user
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # 优雅终止
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "pg_ctl stop -m fast || true"
+
+          # 数据卷挂载
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+
+      terminationGracePeriodSeconds: 60
+      dnsPolicy: ClusterFirst
+
+  # 持久化存储
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 500Gi
+
+  # 更新策略
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+
+---
+# ============================================================================
+# PostgreSQL Service - 数据库访问
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: aiggs
+  labels:
+    app: postgres
+spec:
+  clusterIP: None  # Headless Service
+  selector:
+    app: postgres
+  ports:
+    - name: db
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+
+---
+# ============================================================================
+# Redis Cluster - 6 节点（3 主 3 从）
+# ============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: aiggs
+  labels:
+    app: redis
+    tier: cache
+spec:
+  serviceName: redis
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        tier: cache
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - redis
+              topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - redis-server
+            - /etc/redis/redis.conf
+            - --cluster-enabled
+            - "yes"
+            - --cluster-node-timeout
+            - "15000"
+
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+            - name: gossip
+              containerPort: 16379
+              protocol: TCP
+
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: REDIS_PASSWORD
+
+          # 资源限制
+          resources:
+            requests:
+              cpu: 1
+              memory: 2Gi
+            limits:
+              cpu: 2
+              memory: 4Gi
+
+          # 就绪探针
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # 存活探针
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # 优雅终止
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "redis-cli shutdown save || true; sleep 5"
+
+          volumeMounts:
+            - name: redis-storage
+              mountPath: /data
+            - name: redis-config
+              mountPath: /etc/redis
+
+      terminationGracePeriodSeconds: 30
+
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 100Gi
+
+---
+# ============================================================================
+# Redis Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: aiggs
+  labels:
+    app: redis
+spec:
+  clusterIP: None
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+    - name: gossip
+      port: 16379
+      targetPort: 16379
+
+---
+# ============================================================================
+# RabbitMQ Cluster - 3 节点
+# ============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: aiggs
+  labels:
+    app: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - rabbitmq
+              topologyKey: kubernetes.io/hostname
+
+      serviceAccountName: rabbitmq
+
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.12-management-alpine
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: amqp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: aiggs
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: RABBITMQ_PASSWORD
+            - name: RABBITMQ_ERLANG_COOKIE
+              value: aiggs-secret-cookie
+
+          resources:
+            requests:
+              cpu: 1
+              memory: 1Gi
+            limits:
+              cpu: 2
+              memory: 2Gi
+
+          readinessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - ping
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl start_app || true; sleep 5"
+
+          volumeMounts:
+            - name: rabbitmq-storage
+              mountPath: /var/lib/rabbitmq
+
+      terminationGracePeriodSeconds: 30
+
+  volumeClaimTemplates:
+    - metadata:
+        name: rabbitmq-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 50Gi
+
+---
+# ============================================================================
+# RabbitMQ Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: aiggs
+spec:
+  clusterIP: None
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+
+---
+# ============================================================================
+# RabbitMQ ServiceAccount & ClusterRole
+# ============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rabbitmq
+  namespace: aiggs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rabbitmq
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rabbitmq
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rabbitmq
+subjects:
+  - kind: ServiceAccount
+    name: rabbitmq
+    namespace: aiggs
+
+---
+# ============================================================================
+# Game Core Service - 核心游戏服务
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-core-service
+  namespace: aiggs
+  labels:
+    app: game-core-service
+    tier: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: game-core-service
+
+  template:
+    metadata:
+      labels:
+        app: game-core-service
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - game-core-service
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: game-core
+          image: aiggs/game-core-service:1.0.0
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+
+          env:
+            # 基础配置
+            - name: SERVICE_NAME
+              value: game-core-service
+            - name: LOG_LEVEL
+              value: info
+
+            # 数据库配置
+            - name: DATABASE_HOST
+              value: postgres-0.postgres.aiggs.svc.cluster.local
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_NAME
+              value: aiggs
+            - name: DATABASE_USER
+              value: aiggs_user
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: DB_PASSWORD
+            - name: DATABASE_MAX_CONNECTIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: game-config
+                  key: DATABASE_MAX_CONNECTIONS
+
+            # Redis 配置
+            - name: REDIS_HOST
+              value: redis.aiggs.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: REDIS_PASSWORD
+
+            # RabbitMQ 配置
+            - name: RABBITMQ_HOST
+              value: rabbitmq.aiggs.svc.cluster.local
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: aiggs
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: RABBITMQ_PASSWORD
+
+            # 游戏配置
+            - name: EGG_PRODUCTION_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: game-config
+                  key: EGG_PRODUCTION_INTERVAL
+            - name: EXCHANGE_RATE
+              valueFrom:
+                configMapKeyRef:
+                  name: game-config
+                  key: EXCHANGE_RATE
+
+          # 资源限制
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+
+          # 就绪探针
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+
+          # 存活探针
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # 优雅终止
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep 30
+
+      terminationGracePeriodSeconds: 40
+
+---
+# ============================================================================
+# Game Core Service - 内部 Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-core-service
+  namespace: aiggs
+  labels:
+    app: game-core-service
+spec:
+  type: ClusterIP
+  selector:
+    app: game-core-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+
+---
+# ============================================================================
+# Steal Service - 偷蛋服务
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: steal-service
+  namespace: aiggs
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: steal-service
+
+  template:
+    metadata:
+      labels:
+        app: steal-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - steal-service
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: steal
+          image: aiggs/steal-service:1.0.0
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8081
+            - name: metrics
+              containerPort: 9090
+
+          env:
+            - name: SERVICE_NAME
+              value: steal-service
+            - name: DATABASE_HOST
+              value: postgres-0.postgres.aiggs.svc.cluster.local
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_HOST
+              value: redis.aiggs.svc.cluster.local
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_HOST
+              value: rabbitmq.aiggs.svc.cluster.local
+            - name: STEAL_COOLDOWN_MINUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: game-config
+                  key: STEAL_COOLDOWN_MINUTES
+
+          resources:
+            requests:
+              cpu: 300m
+              memory: 256Mi
+            limits:
+              cpu: 600m
+              memory: 512Mi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sleep
+                  - "30"
+
+      terminationGracePeriodSeconds: 40
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: steal-service
+  namespace: aiggs
+spec:
+  type: ClusterIP
+  selector:
+    app: steal-service
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081
+
+---
+# ============================================================================
+# Exchange Service - 兑换服务
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exchange-service
+  namespace: aiggs
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: exchange-service
+
+  template:
+    metadata:
+      labels:
+        app: exchange-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - exchange-service
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: exchange
+          image: aiggs/exchange-service:1.0.0
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8082
+            - name: metrics
+              containerPort: 9090
+
+          env:
+            - name: SERVICE_NAME
+              value: exchange-service
+            - name: DATABASE_HOST
+              value: postgres-0.postgres.aiggs.svc.cluster.local
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_HOST
+              value: redis.aiggs.svc.cluster.local
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: REDIS_PASSWORD
+            - name: BASE_RPC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: BASE_RPC_URL
+            - name: BASE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: BASE_PRIVATE_KEY
+            - name: EXCHANGE_RATE
+              valueFrom:
+                configMapKeyRef:
+                  name: game-config
+                  key: EXCHANGE_RATE
+
+          resources:
+            requests:
+              cpu: 300m
+              memory: 256Mi
+            limits:
+              cpu: 600m
+              memory: 512Mi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sleep
+                  - "30"
+
+      terminationGracePeriodSeconds: 40
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: exchange-service
+  namespace: aiggs
+spec:
+  type: ClusterIP
+  selector:
+    app: exchange-service
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+
+---
+# ============================================================================
+# MCP Gateway Service - AI 网关服务
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-gateway-service
+  namespace: aiggs
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: mcp-gateway-service
+
+  template:
+    metadata:
+      labels:
+        app: mcp-gateway-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - mcp-gateway-service
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: mcp-gateway
+          image: aiggs/mcp-gateway-service:1.0.0
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8083
+            - name: metrics
+              containerPort: 9090
+
+          env:
+            - name: SERVICE_NAME
+              value: mcp-gateway-service
+            - name: REDIS_HOST
+              value: redis.aiggs.svc.cluster.local
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_HOST
+              value: rabbitmq.aiggs.svc.cluster.local
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: RABBITMQ_PASSWORD
+            - name: CLAUDE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: CLAUDE_API_KEY
+            - name: GPT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: GPT_API_KEY
+            - name: MCP_REQUEST_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: game-config
+                  key: MCP_REQUEST_TIMEOUT
+            - name: MCP_MAX_CONCURRENT_REQUESTS
+              valueFrom:
+                configMapKeyRef:
+                  name: game-config
+                  key: MCP_MAX_CONCURRENT_REQUESTS
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sleep
+                  - "30"
+
+      terminationGracePeriodSeconds: 40
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-gateway-service
+  namespace: aiggs
+spec:
+  type: ClusterIP
+  selector:
+    app: mcp-gateway-service
+  ports:
+    - name: http
+      port: 8083
+      targetPort: 8083
+
+---
+# ============================================================================
+# Notification Service - 通知服务（含 WebSocket）
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: aiggs
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: notification-service
+
+  template:
+    metadata:
+      labels:
+        app: notification-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - notification-service
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: notification
+          image: aiggs/notification-service:1.0.0
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8084
+            - name: websocket
+              containerPort: 8085
+            - name: metrics
+              containerPort: 9090
+
+          env:
+            - name: SERVICE_NAME
+              value: notification-service
+            - name: REDIS_HOST
+              value: redis.aiggs.svc.cluster.local
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_HOST
+              value: rabbitmq.aiggs.svc.cluster.local
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aiggs-secrets
+                  key: RABBITMQ_PASSWORD
+
+          resources:
+            requests:
+              cpu: 300m
+              memory: 512Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8084
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sleep
+                  - "30"
+
+      terminationGracePeriodSeconds: 40
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: aiggs
+spec:
+  type: ClusterIP
+  selector:
+    app: notification-service
+  # 使用 sessionAffinity 实现 WebSocket sticky session
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 86400
+  ports:
+    - name: http
+      port: 8084
+      targetPort: 8084
+    - name: websocket
+      port: 8085
+      targetPort: 8085
+
+---
+# ============================================================================
+# Nginx Ingress Controller
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller
+  namespace: aiggs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-ingress
+  template:
+    metadata:
+      labels:
+        app: nginx-ingress
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - nginx-ingress
+                topologyKey: kubernetes.io/hostname
+
+      serviceAccountName: nginx-ingress
+
+      containers:
+        - name: nginx-ingress-controller
+          image: nginx/nginx-ingress:3.0.2
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - -nginx-configmaps=$(POD_NAMESPACE)/nginx-config
+            - -ingress-class=nginx
+
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+            - name: metrics
+              containerPort: 9113
+
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          readinessProbe:
+            httpGet:
+              path: /nginx_status
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /nginx_status
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-controller
+  namespace: aiggs
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-ingress
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-ingress
+  namespace: aiggs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nginx-ingress
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "namespaces", "secrets", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nginx-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nginx-ingress
+subjects:
+  - kind: ServiceAccount
+    name: nginx-ingress
+    namespace: aiggs
+
+---
+# ============================================================================
+# Ingress - 路由配置
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aiggs-ingress
+  namespace: aiggs
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.aiggs.xyz
+      http:
+        paths:
+          - path: /game
+            pathType: Prefix
+            backend:
+              service:
+                name: game-core-service
+                port:
+                  number: 8080
+          - path: /steal
+            pathType: Prefix
+            backend:
+              service:
+                name: steal-service
+                port:
+                  number: 8081
+          - path: /exchange
+            pathType: Prefix
+            backend:
+              service:
+                name: exchange-service
+                port:
+                  number: 8082
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp-gateway-service
+                port:
+                  number: 8083
+          - path: /notify
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 8084
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 8085
+
+---
+# ============================================================================
+# 存储类 - 高性能 SSD
+# ============================================================================
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+provisioner: kubernetes.io/aws-ebs
+allowVolumeExpansion: true
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"

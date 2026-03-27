@@ -1,0 +1,762 @@
+# ============================================================================
+# AIggs K8s 监控和告警配置
+# 包含 Prometheus、Grafana、AlertManager
+# ============================================================================
+
+---
+# ============================================================================
+# Prometheus ConfigMap - 主配置文件
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: aiggs
+data:
+  prometheus.yml: |
+    # Prometheus 全局配置
+    global:
+      scrape_interval: 15s           # 全局抓取间隔
+      evaluation_interval: 15s       # 全局评估间隔
+      external_labels:
+        cluster: 'aiggs-production'
+        region: 'aws-us-east-1'
+
+    # AlertManager 配置
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+
+    # 告警规则文件
+    rule_files:
+      - '/etc/prometheus/rules/*.yml'
+
+    # 抓取配置
+    scrape_configs:
+      # 1. Prometheus 自身指标
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # 2. Kubernetes API Server
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # 3. Kubernetes Nodes
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # 4. Kubernetes Pods
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+      # 5. Game Core Service
+      - job_name: 'game-core-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - aiggs
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: game-core-service
+          - source_labels: [__meta_kubernetes_pod_ip]
+            action: replace
+            regex: (.+)
+            target_label: __address__
+            replacement: $1:9090
+
+      # 6. Steal Service
+      - job_name: 'steal-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - aiggs
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: steal-service
+          - source_labels: [__meta_kubernetes_pod_ip]
+            action: replace
+            target_label: __address__
+            replacement: $1:9090
+
+      # 7. Exchange Service
+      - job_name: 'exchange-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - aiggs
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: exchange-service
+          - source_labels: [__meta_kubernetes_pod_ip]
+            action: replace
+            target_label: __address__
+            replacement: $1:9090
+
+      # 8. MCP Gateway Service
+      - job_name: 'mcp-gateway-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - aiggs
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: mcp-gateway-service
+          - source_labels: [__meta_kubernetes_pod_ip]
+            action: replace
+            target_label: __address__
+            replacement: $1:9090
+
+      # 9. Notification Service
+      - job_name: 'notification-service'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - aiggs
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: notification-service
+          - source_labels: [__meta_kubernetes_pod_ip]
+            action: replace
+            target_label: __address__
+            replacement: $1:9090
+
+      # 10. PostgreSQL Exporter
+      - job_name: 'postgresql'
+        static_configs:
+          - targets: ['postgres-exporter:9187']
+        relabel_configs:
+          - source_labels: [__address__]
+            action: replace
+            target_label: instance
+            replacement: 'postgres-prod'
+
+      # 11. Redis Exporter
+      - job_name: 'redis'
+        static_configs:
+          - targets: ['redis-exporter:9121']
+
+      # 12. RabbitMQ Exporter
+      - job_name: 'rabbitmq'
+        static_configs:
+          - targets: ['rabbitmq-exporter:9419']
+
+---
+# ============================================================================
+# Prometheus 告警规则
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: aiggs
+data:
+  alert_rules.yml: |
+    groups:
+      # ========== Critical 级别告警 ==========
+      - name: critical_alerts
+        interval: 30s
+        rules:
+          # 1. 服务可用性告警（SLA < 99.9%）
+          - alert: ServiceUnavailability
+            expr: |
+              (1 - (sum(rate(http_requests_total{status=~"2.."}[5m])) / sum(rate(http_requests_total[5m])))) > 0.001
+            for: 2m
+            labels:
+              severity: critical
+              service: all
+            annotations:
+              summary: "服务可用性低于 99.9%"
+              description: "过去 5 分钟内错误率超过 0.1%，当前错误率: {{ $value | humanizePercentage }}"
+              runbook_url: "https://wiki.aiggs.xyz/runbooks/unavailability"
+
+          # 2. 数据库主库故障
+          - alert: PostgreSQLMasterDown
+            expr: pg_up{instance="postgres-0"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              component: database
+            annotations:
+              summary: "PostgreSQL 主库故障"
+              description: "主库 postgres-0 无法连接"
+              runbook_url: "https://wiki.aiggs.xyz/runbooks/postgres-failover"
+
+          # 3. Redis 集群故障
+          - alert: RedisClusterDown
+            expr: up{job="redis"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              component: cache
+            annotations:
+              summary: "Redis 集群节点故障"
+              description: "Redis 节点 {{ $labels.instance }} 无法连接"
+
+          # 4. 消息队列故障
+          - alert: RabbitMQDown
+            expr: up{job="rabbitmq"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              component: message_queue
+            annotations:
+              summary: "RabbitMQ 服务故障"
+              description: "RabbitMQ 节点 {{ $labels.instance }} 离线"
+
+          # 5. Pod CrashLoopBackOff
+          - alert: PodCrashLooping
+            expr: |
+              rate(kube_pod_container_status_restarts_total[15m]) > 0.1
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pod {{ $labels.pod }} 频繁重启"
+              description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} 在过去 15 分钟内重启 {{ $value }} 次/秒"
+
+          # 6. 节点故障
+          - alert: KubernetesNodeNotReady
+            expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Kubernetes 节点 {{ $labels.node }} 未就绪"
+              description: "节点已离线或不健康"
+
+      # ========== Warning 级别告警 ==========
+      - name: warning_alerts
+        interval: 30s
+        rules:
+          # 1. P99 延迟告警 (>2s)
+          - alert: HighLatencyP99
+            expr: |
+              histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 2
+            for: 5m
+            labels:
+              severity: warning
+              metric_type: latency
+            annotations:
+              summary: "服务 P99 延迟高"
+              description: "{{ $labels.service }} 的 P99 延迟为 {{ $value | humanizeDuration }}"
+
+          # 2. 数据库连接池告警 (>80%)
+          - alert: PostgreSQLConnectionPoolHigh
+            expr: |
+              (pg_stat_activity_count / pg_settings_max_connections) > 0.8
+            for: 5m
+            labels:
+              severity: warning
+              component: database
+            annotations:
+              summary: "PostgreSQL 连接池使用率高"
+              description: "连接池使用率: {{ $value | humanizePercentage }}"
+
+          # 3. Redis 内存使用告警 (>80%)
+          - alert: RedisMemoryHigh
+            expr: |
+              (redis_memory_used_bytes / redis_memory_max_bytes) > 0.8
+            for: 5m
+            labels:
+              severity: warning
+              component: cache
+            annotations:
+              summary: "Redis 内存使用率高"
+              description: "内存使用率: {{ $value | humanizePercentage }}"
+
+          # 4. 磁盘使用告警 (>85%)
+          - alert: DiskUsageHigh
+            expr: |
+              (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.15
+            for: 10m
+            labels:
+              severity: warning
+              component: infrastructure
+            annotations:
+              summary: "磁盘使用率高"
+              description: "节点 {{ $labels.node }} 磁盘可用空间不足 15%"
+
+          # 5. RabbitMQ 队列深度告警 (>10000)
+          - alert: RabbitMQQueueDepthHigh
+            expr: rabbitmq_queue_messages > 10000
+            for: 5m
+            labels:
+              severity: warning
+              component: message_queue
+            annotations:
+              summary: "RabbitMQ 队列堆积"
+              description: "队列 {{ $labels.queue }} 有 {{ $value }} 条未处理消息"
+
+          # 6. 错误率告警 (>1%)
+          - alert: HighErrorRate
+            expr: |
+              (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) > 0.01
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "服务错误率高"
+              description: "过去 5 分钟平均错误率: {{ $value | humanizePercentage }}"
+
+          # 7. Pod 内存接近限制告警 (>90%)
+          - alert: PodMemoryUsageHigh
+            expr: |
+              (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.9
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod {{ $labels.pod }} 内存使用高"
+              description: "内存使用率: {{ $value | humanizePercentage }}"
+
+          # 8. Pod CPU 接近限制告警 (>90%)
+          - alert: PodCPUUsageHigh
+            expr: |
+              (rate(container_cpu_usage_seconds_total[5m]) / container_spec_cpu_quota) > 0.9
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod {{ $labels.pod }} CPU 使用高"
+              description: "CPU 使用率: {{ $value | humanizePercentage }}"
+
+      # ========== Info 级别告警 ==========
+      - name: info_alerts
+        interval: 5m
+        rules:
+          # 1. 日活用户统计
+          - alert: DAUMetricInfo
+            expr: aiggs_active_players > 0
+            for: 1m
+            labels:
+              severity: info
+              metric_type: business
+            annotations:
+              summary: "日活用户统计"
+              description: "当前在线玩家数: {{ $value }}"
+
+          # 2. 产蛋速率统计
+          - alert: EggProductionRateInfo
+            expr: rate(aiggs_eggs_produced_total[1h]) > 0
+            for: 1m
+            labels:
+              severity: info
+              metric_type: business
+            annotations:
+              summary: "产蛋速率统计"
+              description: "过去 1 小时产蛋速率: {{ $value }} eggs/sec"
+
+---
+# ============================================================================
+# Prometheus StatefulSet
+# ============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  namespace: aiggs
+spec:
+  serviceName: prometheus
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.45.0
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--storage.tsdb.retention.time=15d'
+            - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+            - '--web.console.templates=/usr/share/prometheus/consoles'
+            - '--web.enable-lifecycle'
+
+          ports:
+            - name: web
+              containerPort: 9090
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: 2
+              memory: 4Gi
+
+          volumeMounts:
+            - name: prometheus-config
+              mountPath: /etc/prometheus
+            - name: prometheus-rules
+              mountPath: /etc/prometheus/rules
+            - name: prometheus-storage
+              mountPath: /prometheus
+
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+        - name: prometheus-rules
+          configMap:
+            name: prometheus-rules
+
+      volumeClaimTemplates:
+        - metadata:
+            name: prometheus-storage
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: fast-ssd
+            resources:
+              requests:
+                storage: 100Gi
+
+---
+# ============================================================================
+# Prometheus Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: aiggs
+spec:
+  clusterIP: None
+  selector:
+    app: prometheus
+  ports:
+    - name: web
+      port: 9090
+      targetPort: 9090
+
+---
+# ============================================================================
+# Prometheus ServiceAccount & RBAC
+# ============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: aiggs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: aiggs
+
+---
+# ============================================================================
+# AlertManager ConfigMap
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: aiggs
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      # Slack 全局配置
+      slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+    # 告警路由配置
+    route:
+      receiver: 'aiggs-alerts'
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+
+      # 子路由：Critical 级别（立即通知）
+      routes:
+        - match:
+            severity: critical
+          receiver: 'critical-alerts'
+          group_wait: 0s
+          repeat_interval: 5m
+          continue: true
+
+        # 子路由：Warning 级别（15 分钟内）
+        - match:
+            severity: warning
+          receiver: 'warning-alerts'
+          group_wait: 5m
+          repeat_interval: 3h
+          continue: true
+
+        # 子路由：Info 级别（每日汇总）
+        - match:
+            severity: info
+          receiver: 'info-alerts'
+          group_wait: 30m
+          repeat_interval: 24h
+          continue: true
+
+    # 接收器配置
+    receivers:
+      # 1. 主告警接收器
+      - name: 'aiggs-alerts'
+        slack_configs:
+          - channel: '#aiggs-alerts'
+            title: 'AIggs {{ .GroupLabels.alertname }}'
+            text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+            send_resolved: true
+
+      # 2. Critical 告警接收器（多渠道）
+      - name: 'critical-alerts'
+        slack_configs:
+          - channel: '#critical-alerts'
+            title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        pagerduty_configs:
+          - service_key: 'YOUR_PAGERDUTY_KEY'
+        email_configs:
+          - to: 'oncall@aiggs.xyz'
+            from: 'alertmanager@aiggs.xyz'
+            smarthost: 'smtp.gmail.com:587'
+            auth_username: 'alerts@aiggs.xyz'
+            auth_password: 'your_email_password'
+
+      # 3. Warning 告警接收器
+      - name: 'warning-alerts'
+        slack_configs:
+          - channel: '#warnings'
+            title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+
+      # 4. Info 告警接收器（每日汇总）
+      - name: 'info-alerts'
+        slack_configs:
+          - channel: '#daily-report'
+            title: 'ℹ️ Daily Report: {{ .GroupLabels.alertname }}'
+
+    # 告警抑制规则
+    inhibit_rules:
+      # 如果实例已宕机，抑制该实例的其他告警
+      - source_match:
+          severity: 'critical'
+        target_match_re:
+          severity: 'warning|info'
+        equal: ['instance']
+
+---
+# ============================================================================
+# AlertManager Deployment
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: aiggs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.25.0
+          args:
+            - '--config.file=/etc/alertmanager/alertmanager.yml'
+            - '--storage.path=/alertmanager'
+
+          ports:
+            - name: web
+              containerPort: 9093
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+          volumeMounts:
+            - name: alertmanager-config
+              mountPath: /etc/alertmanager
+            - name: alertmanager-storage
+              mountPath: /alertmanager
+
+      volumes:
+        - name: alertmanager-config
+          configMap:
+            name: alertmanager-config
+        - name: alertmanager-storage
+          emptyDir: {}
+
+---
+# ============================================================================
+# AlertManager Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: aiggs
+spec:
+  type: ClusterIP
+  selector:
+    app: alertmanager
+  ports:
+    - name: web
+      port: 9093
+      targetPort: 9093
+
+---
+# ============================================================================
+# Grafana Deployment
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: aiggs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.0.0
+          ports:
+            - name: web
+              containerPort: 3000
+
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: admin123  # 生产环境应使用 Secret
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-piechart-panel"
+
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+
+      volumes:
+        - name: grafana-storage
+          emptyDir: {}
+
+---
+# ============================================================================
+# Grafana Service
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: aiggs
+spec:
+  type: LoadBalancer
+  selector:
+    app: grafana
+  ports:
+    - name: web
+      port: 3000
+      targetPort: 3000

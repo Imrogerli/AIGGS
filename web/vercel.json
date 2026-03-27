@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "whitepaper.html", "use": "@vercel/static" },
+    { "src": "deck.html", "use": "@vercel/static" },
+    { "src": "docs/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/whitepaper", "dest": "/whitepaper.html" },
+    { "src": "/deck", "dest": "/deck.html" },
+    { "src": "/docs/(.*)", "dest": "/docs/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

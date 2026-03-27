@@ -1,0 +1,486 @@
+# ============================================================================
+# AIggs K8s 自动扩缩容配置
+# 包含 HPA（水平扩缩）、KEDA（事件驱动）、VPA（垂直扩缩）
+# ============================================================================
+
+---
+# ============================================================================
+# 1. HPA - Game Core Service 水平扩缩容
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: game-core-hpa
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: game-core-service
+
+  minReplicas: 3      # 最少 3 个副本
+  maxReplicas: 20     # 最多 20 个副本
+
+  metrics:
+    # 指标 1: CPU 使用率超过 70% 时扩容
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    # 指标 2: 内存使用率超过 80% 时扩容
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+    # 指标 3: 自定义指标 - QPS（每秒请求数）
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "3000"  # 每个 Pod 平均 QPS 超过 3000 时扩容
+
+  # 扩缩容行为配置
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0      # 无稳定化窗口，立即扩容
+      policies:
+        - type: Percent
+          value: 100                     # 每次最多增加 100%（翻倍）
+          periodSeconds: 15
+        - type: Pods
+          value: 2                       # 或每次增加 2 个 Pod
+          periodSeconds: 15
+      selectPolicy: Max                  # 选择增长最快的策略
+
+    scaleDown:
+      stabilizationWindowSeconds: 300    # 缩容前稳定 5 分钟，避免频繁缩容
+      policies:
+        - type: Percent
+          value: 50                      # 每次最多减少 50%
+          periodSeconds: 60
+
+---
+# ============================================================================
+# 2. HPA - Steal Service 水平扩缩容
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: steal-service-hpa
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: steal-service
+
+  minReplicas: 2
+  maxReplicas: 10
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60  # CPU 阈值较低
+
+    - type: Pods
+      pods:
+        metric:
+          name: concurrent_connections
+        target:
+          type: AverageValue
+          averageValue: "500"  # 并发连接数超过 500 时扩容
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+
+---
+# ============================================================================
+# 3. HPA - Exchange Service 水平扩缩容
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: exchange-service-hpa
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: exchange-service
+
+  minReplicas: 2
+  maxReplicas: 8
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+
+---
+# ============================================================================
+# 4. HPA - MCP Gateway Service 水平扩缩容
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mcp-gateway-hpa
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mcp-gateway-service
+
+  minReplicas: 3
+  maxReplicas: 15
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+
+    # 自定义指标：活跃连接数
+    - type: Pods
+      pods:
+        metric:
+          name: mcp_active_connections
+        target:
+          type: AverageValue
+          averageValue: "5000"  # 每个 Pod 平均连接数超过 5000 时扩容
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+
+---
+# ============================================================================
+# 5. HPA - Notification Service 水平扩缩容
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+
+  minReplicas: 2
+  maxReplicas: 12
+
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75  # WebSocket 连接占用内存较多
+
+    # 自定义指标：WebSocket 连接数
+    - type: Pods
+      pods:
+        metric:
+          name: websocket_connections_active
+        target:
+          type: AverageValue
+          averageValue: "50000"  # 每个 Pod 超过 50000 个 WebSocket 连接时扩容
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 30  # WebSocket 连接建立较慢
+    scaleDown:
+      stabilizationWindowSeconds: 600  # 缩容更保守
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+
+---
+# ============================================================================
+# 6. KEDA ScaledObject - 消息队列深度驱动扩缩容
+# 说明：KEDA 需要额外安装 (helm install keda kedacore/keda -n keda)
+# ============================================================================
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: rabbitmq-message-queue-scaler
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    name: game-core-service
+
+  # 监听 RabbitMQ 消息队列深度
+  triggers:
+    - type: rabbitmq
+      metadata:
+        host: amqp://aiggs:password@rabbitmq.aiggs.svc.cluster.local:5672/
+        queueName: egg_production_queue
+        value: "10000"  # 队列消息数超过 10000 条时扩容
+
+  minReplicaCount: 3
+  maxReplicaCount: 20
+
+  # 冷却期配置
+  cooldownPeriod: 300  # 缩容冷却 5 分钟
+
+  # 掉级时保持最小副本数
+  fallback:
+    failureThreshold: 3
+    replicas: 3
+
+---
+# ============================================================================
+# 7. KEDA ScaledObject - 早报预计算时段自动扩容
+# 说明：使用 Cron 触发器实现定时扩缩容
+# ============================================================================
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: morning-report-scaler
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    name: game-core-service
+
+  triggers:
+    # 04:00 - 06:00 时段扩容到 15 个副本
+    - type: cron
+      metadata:
+        timezone: Asia/Shanghai
+        start: 0 4 * * *     # 04:00
+        end: 0 6 * * *       # 06:00
+        desiredReplicas: "15"
+
+  minReplicaCount: 3
+  maxReplicaCount: 20
+
+---
+# ============================================================================
+# 8. KEDA ScaledObject - Redis 内存压力驱动扩缩容
+# ============================================================================
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: redis-memory-scaler
+  namespace: aiggs
+spec:
+  scaleTargetRef:
+    name: steal-service
+
+  triggers:
+    - type: redis
+      metadata:
+        address: redis.aiggs.svc.cluster.local:6379
+        databaseIndex: "0"
+        key: memory_usage_bytes
+        value: "80000000000"  # 80GB - Redis 内存压力大时扩容消费者
+
+  minReplicaCount: 2
+  maxReplicaCount: 10
+
+---
+# ============================================================================
+# 9. VPA - Vertical Pod Autoscaler (自动调整 CPU/Memory requests)
+# 说明：VPA 需要额外安装 (kubectl apply -f https://github.com/kubernetes/autoscaler/...)
+# ============================================================================
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: game-core-vpa
+  namespace: aiggs
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: game-core-service
+
+  updatePolicy:
+    updateMode: "Auto"  # 自动更新 Pod，可选值：Off, Initial, Recreate, Auto
+
+  resourcePolicy:
+    containerPolicies:
+      - containerName: game-core
+        minAllowed:
+          cpu: 100m
+          memory: 128Mi
+        maxAllowed:
+          cpu: 2
+          memory: 2Gi
+        controlledResources: ["cpu", "memory"]
+
+---
+# ============================================================================
+# 10. VPA - Steal Service
+# ============================================================================
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: steal-service-vpa
+  namespace: aiggs
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: steal-service
+
+  updatePolicy:
+    updateMode: "Auto"
+
+  resourcePolicy:
+    containerPolicies:
+      - containerName: steal
+        minAllowed:
+          cpu: 100m
+          memory: 128Mi
+        maxAllowed:
+          cpu: 1
+          memory: 512Mi
+
+---
+# ============================================================================
+# 11. VPA - Exchange Service
+# ============================================================================
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: exchange-service-vpa
+  namespace: aiggs
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: exchange-service
+
+  updatePolicy:
+    updateMode: "Auto"
+
+  resourcePolicy:
+    containerPolicies:
+      - containerName: exchange
+        minAllowed:
+          cpu: 100m
+          memory: 128Mi
+        maxAllowed:
+          cpu: 1
+          memory: 512Mi
+
+---
+# ============================================================================
+# 12. VPA - MCP Gateway Service
+# ============================================================================
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: mcp-gateway-vpa
+  namespace: aiggs
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mcp-gateway-service
+
+  updatePolicy:
+    updateMode: "Auto"
+
+  resourcePolicy:
+    containerPolicies:
+      - containerName: mcp-gateway
+        minAllowed:
+          cpu: 200m
+          memory: 256Mi
+        maxAllowed:
+          cpu: 2
+          memory: 1Gi
+
+---
+# ============================================================================
+# 13. VPA - Notification Service
+# ============================================================================
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: notification-service-vpa
+  namespace: aiggs
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+
+  updatePolicy:
+    updateMode: "Auto"
+
+  resourcePolicy:
+    containerPolicies:
+      - containerName: notification
+        minAllowed:
+          cpu: 100m
+          memory: 256Mi
+        maxAllowed:
+          cpu: 1
+          memory: 1Gi
+
+---
+# ============================================================================
+# Metrics Server - HPA 依赖（确保集群已安装）
+# ============================================================================
+# 如果集群未安装 Metrics Server，请执行：
+# kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
