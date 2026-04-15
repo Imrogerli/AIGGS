@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIggs · 蛋蛋农场</title>
+<style>
+  :root {
+    --gold: #FFD700;
+    --gold-dim: rgba(255,215,0,0.15);
+    --gold-border: rgba(255,215,0,0.3);
+    --green: #00ff88;
+    --red: #ff4d6d;
+    --bg: #080814;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: #0a0a18;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  }
+
+  /* ─── PHONE SHELL ─── */
+  .phone {
+    width: 390px;
+    min-height: 844px;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+    border-radius: 44px;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+    margin: 30px 0 60px;
+  }
+
+  /* ─── STATUS BAR ─── */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 24px 0;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+    position: relative;
+    z-index: 20;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px 0;
+  }
+  .player-row { display: flex; align-items: center; gap: 10px; }
+  .avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF8C00, #FFD700);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    border: 2px solid rgba(255,215,0,0.5);
+    box-shadow: 0 0 16px rgba(255,180,0,0.35);
+    flex-shrink: 0;
+  }
+  .player-name { color: #fff; font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+  .farm-tag {
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 2px;
+  }
+  .farm-tag-text { color: rgba(255,215,0,0.75); font-size: 11px; }
+  .badge-founder {
+    background: linear-gradient(90deg, #FF8C00, #FFD700);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 800;
+    color: #000;
+    letter-spacing: 0.5px;
+  }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .level-badge {
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .aigg-bal {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,215,0,0.25);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 700;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .aigg-dot {
+    width: 7px; height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--gold);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ─── FARM SCENE ─── */
+  .farm-scene {
+    position: relative;
+    width: 390px;
+    height: 400px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+
+  /* Sky */
+  .sky {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      #04041a 0%, #080828 25%, #0f0a28 50%,
+      #1a0f20 72%, #221525 85%, #1e1b10 100%);
+  }
+
+  /* Star canvas */
+  #starCanvas {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 65%;
+    pointer-events: none;
+  }
+
+  /* Moon */
+  .moon {
+    position: absolute; top: 22px; right: 36px;
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 38%, #FFFDE0, #FFE082 60%, #FFB300);
+    box-shadow: 0 0 24px rgba(255,220,80,0.5), 0 0 60px rgba(255,200,50,0.15);
+  }
+  .moon::after {
+    content: '';
+    position: absolute; top: 8px; right: -6px;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: #04041a;
+    opacity: 0.75;
+  }
+
+  /* Distant hills */
+  .hill {
+    position: absolute;
+    border-radius: 50%;
+    bottom: 38%;
+  }
+  .hill1 { width: 220px; height: 90px; background: #0c1c0c; left: -30px; }
+  .hill2 { width: 180px; height: 75px; background: #0e1e0e; right: -10px; }
+  .hill3 { width: 130px; height: 60px; background: #101f10; left: 120px; }
+
+  /* Ground */
+  .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 42%;
+    background: linear-gradient(180deg, #1a3518 0%, #0e2010 100%);
+  }
+  .ground-line {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(60,120,40,0.6), transparent);
+  }
+
+  /* Grass tufts */
+  .grass {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 18px;
+  }
+
+  /* Trees */
+  .tree { position: absolute; bottom: 38%; }
+  .tree-trunk {
+    width: 11px; height: 24px;
+    background: #3d2006;
+    margin: 0 auto;
+    border-radius: 2px;
+  }
+  .tree-top1 {
+    width: 0; height: 0;
+    border-left: 22px solid transparent;
+    border-right: 22px solid transparent;
+    border-bottom: 44px solid #1a3d12;
+    margin: 0 auto; position: relative; bottom: -2px;
+  }
+  .tree-top2 {
+    width: 0; height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-bottom: 36px solid #1f4a16;
+    margin: 0 auto;
+    position: relative; top: -28px;
+  }
+  .tree-top3 {
+    width: 0; height: 0;
+    border-left: 13px solid transparent;
+    border-right: 13px solid transparent;
+    border-bottom: 28px solid #235519;
+    margin: 0 auto;
+    position: relative; top: -52px;
+  }
+
+  /* ─── CHICKEN COOP ─── */
+  .coop {
+    position: absolute;
+    bottom: 108px;
+    left: 50%; transform: translateX(-50%);
+    width: 160px;
+  }
+  /* Roof */
+  .roof {
+    width: 0; height: 0;
+    border-left: 90px solid transparent;
+    border-right: 90px solid transparent;
+    border-bottom: 56px solid #5C3206;
+    position: relative;
+    margin: 0 auto;
+    filter: drop-shadow(0 -4px 8px rgba(0,0,0,0.5));
+  }
+  .roof-ridge {
+    position: absolute;
+    top: -4px; left: -8px; right: -8px;
+    height: 8px;
+    background: #7A4010;
+    border-radius: 4px;
+    border-bottom: none;
+  }
+  /* Main body */
+  .coop-body {
+    width: 140px;
+    height: 80px;
+    background: linear-gradient(180deg, #6B4012 0%, #4A2A08 100%);
+    margin: 0 auto;
+    border-radius: 0 0 6px 6px;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 10px;
+    border: 1px solid rgba(90,50,10,0.8);
+    border-top: none;
+  }
+  /* Window */
+  .window {
+    width: 34px; height: 28px;
+    background: radial-gradient(ellipse, #FFA040 0%, #FF6800 60%, #C04000 100%);
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    box-shadow: 0 0 14px rgba(255,140,0,0.7), 0 0 28px rgba(255,100,0,0.3);
+    animation: flicker 3s infinite alternate;
+  }
+  .window::before {
+    content: '';
+    position: absolute; top: 3px; left: 50%;
+    transform: translateX(-50%);
+    width: 1px; height: 22px;
+    background: rgba(0,0,0,0.3);
+  }
+  .window::after {
+    content: '';
+    position: absolute; top: 50%; left: 3px; right: 3px;
+    height: 1px;
+    background: rgba(0,0,0,0.3);
+  }
+  @keyframes flicker {
+    0%,100%{opacity:1} 25%{opacity:0.85} 75%{opacity:0.92}
+  }
+  /* Door */
+  .door {
+    width: 26px; height: 38px;
+    background: linear-gradient(180deg, #3a1e04 0%, #2a1403 100%);
+    border-radius: 4px 4px 0 0;
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    border: 1px solid rgba(90,50,10,0.6);
+  }
+  .door-knob {
+    width: 5px; height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; right: 4px;
+    transform: translateY(-50%);
+    box-shadow: 0 0 4px var(--gold);
+  }
+  /* Chimney */
+  .chimney {
+    width: 18px; height: 28px;
+    background: #4A2A08;
+    position: absolute;
+    top: -60px; right: 28px;
+    border: 1px solid rgba(90,50,10,0.8);
+    border-bottom: none;
+  }
+  .smoke-wrap {
+    position: absolute;
+    top: -50px; right: 30px;
+    width: 16px;
+    pointer-events: none;
+  }
+  .smoke {
+    position: absolute;
+    width: 12px; height: 12px;
+    background: rgba(180,180,200,0.25);
+    border-radius: 50%;
+    animation: smokeUp 4s infinite ease-out;
+  }
+  .smoke:nth-child(2) { animation-delay: 1.3s; }
+  .smoke:nth-child(3) { animation-delay: 2.6s; }
+  @keyframes smokeUp {
+    0%   { opacity:0; transform: translateY(0) scale(0.5); }
+    20%  { opacity: 0.5; }
+    100% { opacity:0; transform: translateY(-60px) scale(2.5) translateX(8px); }
+  }
+
+  /* Fence */
+  .fence-row {
+    position: absolute;
+    bottom: 82px;
+    left: 0; right: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    padding: 0 24px;
+    overflow: hidden;
+  }
+  .fence-post {
+    width: 8px; height: 28px;
+    background: #5C3810;
+    border-radius: 1px 1px 0 0;
+    flex-shrink: 0;
+    margin-right: 20px;
+  }
+  .fence-rail {
+    position: absolute;
+    height: 5px;
+    background: #7A5018;
+    border-radius: 2px;
+    left: 24px; right: 24px;
+  }
+  .fence-rail.top { bottom: 98px; }
+  .fence-rail.mid { bottom: 89px; }
+
+  /* ─── CHICKENS ─── */
+  .chicken {
+    position: absolute;
+    bottom: 90px;
+    transform-origin: bottom center;
+  }
+  .ch-body {
+    width: 30px; height: 22px;
+    border-radius: 50% 55% 50% 50%;
+    position: relative;
+  }
+  .ch-head {
+    width: 16px; height: 14px;
+    border-radius: 50%;
+    position: absolute;
+    top: -11px; right: -4px;
+  }
+  .ch-beak {
+    width: 7px; height: 4px;
+    background: #E8A000;
+    border-radius: 2px 4px 2px 0;
+    position: absolute;
+    top: 5px; right: -6px;
+  }
+  .ch-comb { position: absolute; top: -5px; left: 4px; display: flex; gap: 2px; }
+  .comb-b {
+    width: 5px; height: 6px;
+    background: #e83030;
+    border-radius: 50% 50% 0 0;
+  }
+  .ch-eye {
+    width: 4px; height: 4px;
+    background: #1a1a1a;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px; right: 2px;
+  }
+  .ch-eye::after {
+    content:'';
+    width: 1.5px; height: 1.5px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 50%;
+    position: absolute;
+    top: 0; left: 0;
+  }
+  .ch-tail {
+    position: absolute;
+    left: -8px; top: 2px;
+    width: 12px; height: 10px;
+    border-radius: 50% 0 50% 50%;
+  }
+  .ch-wing {
+    position: absolute;
+    top: 4px; left: 6px;
+    width: 14px; height: 10px;
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+  .ch-leg {
+    width: 2px; height: 8px;
+    background: #D08000;
+    position: absolute;
+    bottom: -8px;
+    border-radius: 1px;
+  }
+  .ch-leg.l { left: 8px; }
+  .ch-leg.r { left: 16px; }
+
+  /* White chicken */
+  .wh .ch-body { background: #FFF8EC; }
+  .wh .ch-head { background: #FFF8EC; }
+  .wh .ch-tail { background: #F0E8D0; }
+  .wh .ch-wing { background: #EEE0C0; }
+
+  /* Brown chicken */
+  .br .ch-body { background: #C0703A; }
+  .br .ch-head { background: #C0703A; }
+  .br .ch-tail { background: #A05828; }
+  .br .ch-wing { background: #904820; }
+
+  /* Gold chicken */
+  .gd .ch-body { background: linear-gradient(135deg, #FFD700, #FFA500); box-shadow: 0 0 12px rgba(255,215,0,0.5); }
+  .gd .ch-head { background: linear-gradient(135deg, #FFD700, #FFA500); }
+  .gd .ch-tail { background: #FF8C00; }
+  .gd .ch-wing { background: #FFB800; }
+  .gd .ch-comb .comb-b { background: #FF6600; }
+
+  /* Black chicken */
+  .bk .ch-body { background: #2a2a3a; }
+  .bk .ch-head { background: #2a2a3a; }
+  .bk .ch-tail { background: #1a1a28; }
+  .bk .ch-wing { background: #333344; }
+  .bk .ch-beak { background: #cc8800; }
+
+  /* Bob animations */
+  .bob1 { animation: bob 1.8s infinite ease-in-out; }
+  .bob2 { animation: bob 2.2s 0.5s infinite ease-in-out; }
+  .bob3 { animation: bob 1.5s 0.2s infinite ease-in-out; }
+  .bob4 { animation: bob 2.4s 0.8s infinite ease-in-out; }
+  @keyframes bob {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-5px) rotate(2deg); }
+  }
+
+  /* ─── EGGS ─── */
+  .egg {
+    position: absolute;
+    width: 13px; height: 15px;
+    background: radial-gradient(circle at 38% 30%, #FFFDE4, #FFD700 55%, #E8A000);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    box-shadow: 0 0 8px rgba(255,215,0,0.6), 0 0 16px rgba(255,180,0,0.25);
+    animation: eggPulse 2.5s infinite alternate;
+    bottom: 90px;
+  }
+  @keyframes eggPulse {
+    from { box-shadow: 0 0 6px rgba(255,215,0,0.5); }
+    to   { box-shadow: 0 0 16px rgba(255,215,0,0.9), 0 0 28px rgba(255,160,0,0.3); }
+  }
+
+  /* Floating +egg */
+  .float-lbl {
+    position: absolute;
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 700;
+    pointer-events: none;
+    animation: floatUp 2.5s ease-out infinite;
+    text-shadow: 0 0 8px rgba(255,215,0,0.7);
+  }
+  @keyframes floatUp {
+    0%   { opacity:0; transform: translateY(0); }
+    15%  { opacity:1; }
+    100% { opacity:0; transform: translateY(-70px); }
+  }
+
+  /* ─── SHIELD AURA ─── */
+  .shield-aura {
+    position: absolute;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    width: 230px; height: 180px;
+    border: 2px solid rgba(0,255,136,0.18);
+    border-radius: 50% 50% 40% 40%;
+    box-shadow: inset 0 0 30px rgba(0,255,136,0.05), 0 0 20px rgba(0,255,136,0.08);
+    animation: shieldPulse 3s infinite ease-in-out;
+    pointer-events: none;
+  }
+  @keyframes shieldPulse {
+    0%,100% { opacity:0.6; transform: translateX(-50%) scale(1); }
+    50%     { opacity:1;   transform: translateX(-50%) scale(1.04); }
+  }
+
+  /* ─── STATS SECTION ─── */
+  .stats-section {
+    position: relative; z-index: 10;
+    padding: 0 16px;
+    margin-top: -24px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    transition: all 0.2s;
+  }
+  .stat-card.gold-card {
+    background: rgba(255,215,0,0.07);
+    border-color: rgba(255,215,0,0.22);
+  }
+  .stat-card.green-card {
+    background: rgba(0,255,136,0.05);
+    border-color: rgba(0,255,136,0.18);
+  }
+  .stat-icon { font-size: 30px; flex-shrink: 0; }
+  .stat-info {}
+  .stat-val { color: #fff; font-size: 21px; font-weight: 800; line-height: 1; }
+  .stat-val span { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 400; }
+  .stat-lbl { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 3px; }
+
+  /* ─── PROTECTION STRIP ─── */
+  .prot-strip {
+    margin: 10px 16px 0;
+    background: rgba(0,255,136,0.07);
+    border: 1px solid rgba(0,255,136,0.22);
+    border-radius: 14px;
+    padding: 11px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .prot-left { display: flex; align-items: center; gap: 8px; }
+  .prot-icon { font-size: 18px; }
+  .prot-text { color: #00ff88; font-size: 13px; font-weight: 600; }
+  .prot-sub  { color: rgba(0,255,136,0.55); font-size: 11px; }
+  .prot-timer {
+    background: rgba(0,255,136,0.15);
+    border: 1px solid rgba(0,255,136,0.3);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: #00ff88;
+    font-weight: 700;
+  }
+
+  /* ─── TICKER ─── */
+  .ticker {
+    margin: 10px 16px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 9px 16px;
+  }
+  .ticker-l { color: rgba(255,255,255,0.35); font-size: 12px; }
+  .ticker-r { color: #00ff88; font-size: 13px; font-weight: 700; }
+  .ticker-mid {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .ticker-item { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+  .ticker-item.good { color: #00ff88; }
+  .ticker-item.bad  { color: #ff4d6d; }
+
+  /* ─── ACTIONS ─── */
+  .actions {
+    padding: 14px 16px 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 10px;
+    position: relative; z-index: 10;
+  }
+  .act-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 14px 8px 12px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .act-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.06), transparent 70%);
+  }
+  .act-btn.primary {
+    background: linear-gradient(160deg, rgba(255,215,0,0.18), rgba(255,120,0,0.14));
+    border-color: rgba(255,215,0,0.35);
+  }
+  .act-btn.danger {
+    background: linear-gradient(160deg, rgba(255,77,109,0.15), rgba(200,0,50,0.08));
+    border-color: rgba(255,77,109,0.3);
+  }
+  .act-btn.info {
+    background: linear-gradient(160deg, rgba(80,140,255,0.14), rgba(40,80,200,0.08));
+    border-color: rgba(80,140,255,0.28);
+  }
+  .act-icon { font-size: 26px; }
+  .act-lbl {
+    color: rgba(255,255,255,0.65);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .act-btn.primary .act-lbl { color: var(--gold); }
+  .act-btn.danger  .act-lbl { color: #ff6b85; }
+  .act-btn.info    .act-lbl { color: #7eb3ff; }
+
+  /* Notification dot */
+  .notif {
+    position: absolute;
+    top: 9px; right: 14px;
+    width: 8px; height: 8px;
+    background: #ff4d6d;
+    border-radius: 50%;
+    border: 1.5px solid var(--bg);
+    animation: pulse 1.5s infinite;
+  }
+
+  /* ─── BOTTOM NAV ─── */
+  .bottom-nav {
+    background: rgba(8,8,20,0.96);
+    backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 12px 8px 24px;
+    display: flex;
+    justify-content: space-around;
+    position: relative; z-index: 20;
+  }
+  .nav-i {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 12px;
+  }
+  .nav-i.active { background: rgba(255,215,0,0.1); }
+  .nav-emoji { font-size: 22px; }
+  .nav-lbl {
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    font-weight: 500;
+  }
+  .nav-i.active .nav-lbl { color: var(--gold); }
+  .nav-i.active .nav-emoji {
+    filter: drop-shadow(0 0 6px rgba(255,215,0,0.6));
+  }
+
+  /* ─── RANK PILL ─── */
+  .rank-pill {
+    position: absolute;
+    top: 16px; right: 20px;
+    background: rgba(255,215,0,0.12);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--gold);
+    font-weight: 700;
+    z-index: 20;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ─── CHAT BUBBLE ─── */
+  .chat-bubble {
+    position: absolute;
+    bottom: 260px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px 18px 18px 4px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    white-space: nowrap;
+    z-index: 15;
+    animation: chatFade 4s ease-in-out infinite;
+  }
+  .chat-bubble .ai-tag {
+    color: var(--gold);
+    font-weight: 700;
+    margin-right: 4px;
+  }
+  @keyframes chatFade {
+    0%,15%  { opacity:0; transform: translateX(-50%) translateY(6px); }
+    25%,75% { opacity:1; transform: translateX(-50%) translateY(0); }
+    90%,100%{ opacity:0; transform: translateX(-50%) translateY(-6px); }
+  }
+
+  /* Sparkle particles */
+  .sparkle {
+    position: absolute;
+    pointer-events: none;
+    animation: sparkleAnim var(--dur,2s) infinite var(--delay,0s);
+  }
+  @keyframes sparkleAnim {
+    0%,100%{ opacity:0; transform: scale(0); }
+    50%    { opacity:1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>●●●●  WiFi  🔋</span>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="player-row">
+      <div class="avatar">🐔</div>
+      <div>
+        <div class="player-name">Roger</div>
+        <div class="farm-tag">
+          <span class="farm-tag-text">蛋蛋农场 #0042</span>
+          <span class="badge-founder">创世</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="level-badge">⚡ Lv.3 猎手</div>
+      <div class="aigg-bal">
+        <div class="aigg-dot"></div>
+        24.8 $AIGG
+      </div>
+    </div>
+  </div>
+
+  <!-- FARM SCENE -->
+  <div class="farm-scene" id="scene">
+    <div class="sky"></div>
+    <canvas id="starCanvas"></canvas>
+
+    <!-- Moon -->
+    <div class="moon"></div>
+
+    <!-- Hills -->
+    <div class="hill hill1"></div>
+    <div class="hill hill2"></div>
+    <div class="hill hill3"></div>
+
+    <!-- Ground -->
+    <div class="ground"><div class="ground-line"></div></div>
+
+    <!-- Trees -->
+    <div class="tree" style="left:18px">
+      <div class="tree-top3"></div><div class="tree-top2"></div>
+      <div class="tree-top1"></div><div class="tree-trunk"></div>
+    </div>
+    <div class="tree" style="left:46px; bottom: 40%">
+      <div class="tree-top3"></div><div class="tree-top2"></div>
+      <div class="tree-top1"></div><div class="tree-trunk"></div>
+    </div>
+    <div class="tree" style="right:20px">
+      <div class="tree-top3"></div><div class="tree-top2"></div>
+      <div class="tree-top1"></div><div class="tree-trunk"></div>
+    </div>
+    <div class="tree" style="right:52px; bottom: 40%">
+      <div class="tree-top3"></div><div class="tree-top2"></div>
+      <div class="tree-top1"></div><div class="tree-trunk"></div>
+    </div>
+
+    <!-- Coop -->
+    <div class="coop">
+      <div style="position:relative">
+        <div class="chimney"></div>
+        <div class="smoke-wrap">
+          <div class="smoke"></div><div class="smoke"></div><div class="smoke"></div>
+        </div>
+        <div class="roof"><div class="roof-ridge"></div></div>
+      </div>
+      <div class="coop-body">
+        <div class="window"></div>
+        <div class="window"></div>
+        <div class="door"><div class="door-knob"></div></div>
+      </div>
+    </div>
+
+    <!-- Shield aura -->
+    <div class="shield-aura"></div>
+
+    <!-- Fence -->
+    <div class="fence-row">
+      <div class="fence-post"></div><div class="fence-post"></div>
+      <div class="fence-post"></div><div class="fence-post"></div>
+      <div class="fence-post"></div><div class="fence-post"></div>
+      <div class="fence-post"></div><div class="fence-post"></div>
+      <div class="fence-post"></div><div class="fence-post"></div>
+      <div class="fence-post"></div><div class="fence-post"></div>
+    </div>
+    <div class="fence-rail top"></div>
+    <div class="fence-rail mid"></div>
+
+    <!-- Chickens -->
+    <div class="chicken wh bob1" style="left:60px">
+      <div class="ch-body">
+        <div class="ch-tail"></div><div class="ch-wing"></div>
+        <div class="ch-head">
+          <div class="ch-comb"><div class="comb-b"></div><div class="comb-b"></div><div class="comb-b"></div></div>
+          <div class="ch-beak"></div><div class="ch-eye"></div>
+        </div>
+        <div class="ch-leg l"></div><div class="ch-leg r"></div>
+      </div>
+    </div>
+    <div class="chicken br bob2" style="left:102px; bottom: 94px">
+      <div class="ch-body">
+        <div class="ch-tail"></div><div class="ch-wing"></div>
+        <div class="ch-head">
+          <div class="ch-comb"><div class="comb-b"></div><div class="comb-b"></div></div>
+          <div class="ch-beak"></div><div class="ch-eye"></div>
+        </div>
+        <div class="ch-leg l"></div><div class="ch-leg r"></div>
+      </div>
+    </div>
+    <div class="chicken gd bob3" style="left:142px; bottom: 91px">
+      <div class="ch-body">
+        <div class="ch-tail"></div><div class="ch-wing"></div>
+        <div class="ch-head">
+          <div class="ch-comb"><div class="comb-b"></div><div class="comb-b"></div><div class="comb-b"></div></div>
+          <div class="ch-beak"></div><div class="ch-eye"></div>
+        </div>
+        <div class="ch-leg l"></div><div class="ch-leg r"></div>
+      </div>
+    </div>
+    <div class="chicken wh bob4" style="right:105px; bottom: 93px">
+      <div class="ch-body">
+        <div class="ch-tail"></div><div class="ch-wing"></div>
+        <div class="ch-head">
+          <div class="ch-comb"><div class="comb-b"></div><div class="comb-b"></div></div>
+          <div class="ch-beak"></div><div class="ch-eye"></div>
+        </div>
+        <div class="ch-leg l"></div><div class="ch-leg r"></div>
+      </div>
+    </div>
+    <div class="chicken bk bob1" style="right:62px">
+      <div class="ch-body">
+        <div class="ch-tail"></div><div class="ch-wing"></div>
+        <div class="ch-head">
+          <div class="ch-comb"><div class="comb-b"></div><div class="comb-b"></div></div>
+          <div class="ch-beak"></div><div class="ch-eye"></div>
+        </div>
+        <div class="ch-leg l"></div><div class="ch-leg r"></div>
+      </div>
+    </div>
+
+    <!-- Eggs cluster -->
+    <div class="egg" style="left:76px; bottom: 88px"></div>
+    <div class="egg" style="left:92px; bottom: 90px; animation-delay:.4s"></div>
+    <div class="egg" style="left:84px; bottom: 87px; animation-delay:.8s"></div>
+    <div class="egg" style="right:82px; bottom:89px; animation-delay:.2s"></div>
+    <div class="egg" style="right:68px; bottom:91px; animation-delay:.6s"></div>
+    <div class="egg" style="left:176px; bottom:88px; animation-delay:1s"></div>
+
+    <!-- Floating labels -->
+    <div class="float-lbl" style="left:80px; bottom: 130px; animation-delay:0s">+🥚</div>
+    <div class="float-lbl" style="right:90px; bottom: 140px; animation-delay:1.2s">+🥚</div>
+    <div class="float-lbl" style="left:200px; bottom: 135px; animation-delay:2.4s">+3</div>
+
+    <!-- AI Chat bubble -->
+    <div class="chat-bubble">
+      <span class="ai-tag">AI</span>你有 <b>68</b> 枚蛋未收取，建议现在收蛋 🥚
+    </div>
+
+    <!-- Sparkles near golden hen -->
+    <div class="sparkle" style="left:148px;bottom:120px;font-size:10px;--dur:2.2s;--delay:0s">✦</div>
+    <div class="sparkle" style="left:158px;bottom:125px;font-size:8px;--dur:1.8s;--delay:0.6s;color:var(--gold)">✦</div>
+    <div class="sparkle" style="left:136px;bottom:118px;font-size:7px;--dur:2.5s;--delay:1.2s;color:var(--gold)">✦</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card gold-card">
+        <div class="stat-icon">🐔</div>
+        <div class="stat-info">
+          <div class="stat-val">47 <span>只</span></div>
+          <div class="stat-lbl">母鸡总数</div>
+        </div>
+      </div>
+      <div class="stat-card gold-card">
+        <div class="stat-icon">🥚</div>
+        <div class="stat-info">
+          <div class="stat-val">230 <span>枚</span></div>
+          <div class="stat-lbl">今日产蛋</div>
+        </div>
+      </div>
+      <div class="stat-card green-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+          <div class="stat-val">$12.4</div>
+          <div class="stat-lbl">今日收益</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚔️</div>
+        <div class="stat-info">
+          <div class="stat-val">8 <span>次</span></div>
+          <div class="stat-lbl">成功偷蛋</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROTECTION STRIP -->
+  <div class="prot-strip">
+    <div class="prot-left">
+      <span class="prot-icon">🛡️</span>
+      <div>
+        <div class="prot-text">保护罩生效中</div>
+        <div class="prot-sub">保护范围 50 枚蛋</div>
+      </div>
+    </div>
+    <div class="prot-timer">⏱ 31h 22m</div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker">
+    <span class="ticker-l">全网动态</span>
+    <div class="ticker-mid">
+      <div class="ticker-item good">🌐 活跃 2.3M只鸡</div>
+      <div class="ticker-item bad">🔴 你被偷了 3 次</div>
+    </div>
+    <span class="ticker-r">排名 #1,240</span>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="actions">
+    <div class="act-btn primary">
+      <span class="act-icon">🧺</span>
+      <span class="act-lbl">收蛋</span>
+      <div class="notif"></div>
+    </div>
+    <div class="act-btn danger">
+      <span class="act-icon">🗡️</span>
+      <span class="act-lbl">偷蛋</span>
+    </div>
+    <div class="act-btn">
+      <span class="act-icon">🛡️</span>
+      <span class="act-lbl">保护</span>
+    </div>
+    <div class="act-btn info">
+      <span class="act-icon">🔗</span>
+      <span class="act-lbl">邀请</span>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-i active"><span class="nav-emoji">🏠</span><span class="nav-lbl">农场</span></div>
+    <div class="nav-i"><span class="nav-emoji">🗺️</span><span class="nav-lbl">地图</span></div>
+    <div class="nav-i"><span class="nav-emoji">💬</span><span class="nav-lbl">AI助手</span></div>
+    <div class="nav-i"><span class="nav-emoji">🏆</span><span class="nav-lbl">排行榜</span></div>
+    <div class="nav-i"><span class="nav-emoji">👤</span><span class="nav-lbl">我的</span></div>
+  </div>
+
+</div><!-- .phone -->
+
+<script>
+// ─── Draw stars on canvas ───
+const canvas = document.getElementById('starCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 390;
+canvas.height = 260;
+
+const stars = [];
+for (let i = 0; i < 110; i++) {
+  stars.push({
+    x: Math.random() * 390,
+    y: Math.random() * 260,
+    r: Math.random() * 1.4 + 0.3,
+    alpha: Math.random(),
+    speed: Math.random() * 0.008 + 0.003,
+    phase: Math.random() * Math.PI * 2
+  });
+}
+
+function drawStars(t) {
+  ctx.clearRect(0, 0, 390, 260);
+  stars.forEach(s => {
+    const a = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.speed * 60 + s.phase));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.fill();
+  });
+
+  // Shooting star occasional
+  const sc = (t * 0.0003) % 1;
+  if (sc < 0.02) {
+    const p = sc / 0.02;
+    ctx.beginPath();
+    ctx.moveTo(320 - p * 180, 20 + p * 60);
+    ctx.lineTo(320 - p * 180 + 30, 20 + p * 60 - 10);
+    ctx.strokeStyle = `rgba(255,255,220,${(1 - p) * 0.8})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(drawStars);
+}
+requestAnimationFrame(drawStars);
+</script>
+
+</body>
+</html>
