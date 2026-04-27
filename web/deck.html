@@ -66,8 +66,8 @@ img{max-width:100%;display:block}
 .dots{position:fixed;right:22px;top:50%;z-index:25;display:grid;gap:10px;transform:translateY(-50%)}
 .dot{width:9px;height:9px;border:1px solid rgba(186,255,32,.5);border-radius:99px;background:rgba(255,255,255,.08);cursor:pointer;transition:height .2s ease,background .2s ease,box-shadow .2s ease}
 .dot.is-active{height:28px;background:var(--lime);box-shadow:0 0 18px rgba(186,255,32,.75)}
-.slide{position:relative;min-height:100vh;min-height:100dvh;display:flex;align-items:center;padding:112px clamp(22px,5vw,76px) 58px;overflow:hidden}
-.slide-inner{position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto}
+.slide{position:relative;min-height:100vh;min-height:100dvh;display:flex;align-items:center;scroll-margin-top:76px;padding:112px clamp(22px,5vw,76px) 58px;overflow:hidden}
+.slide-inner{position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;scroll-margin-top:96px}
 .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,.7fr);align-items:center;gap:clamp(26px,5vw,78px)}
 .kicker{margin:0 0 16px;color:var(--lime);font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
 h1,h2,h3,p{margin-top:0}
@@ -474,6 +474,15 @@ const revealNodes=[...document.querySelectorAll(".reveal")];
 const toast=document.querySelector(".toast");
 const prefersReduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+function scrollToHash(){
+  const id=decodeURIComponent(window.location.hash.slice(1));
+  const target=id?document.getElementById(id):null;
+  if(target){
+    const anchor=target.querySelector(".slide-inner")||target;
+    requestAnimationFrame(()=>anchor.scrollIntoView({block:"start"}));
+  }
+}
+
 slides.forEach((slide,index)=>{
   const dot=document.createElement("button");
   dot.className="dot";
@@ -532,6 +541,11 @@ function updateProgress(){
   progressBar.style.width=`${pct}%`;
 }
 window.addEventListener("scroll",updateProgress,{passive:true});
+window.addEventListener("hashchange",scrollToHash);
+window.addEventListener("load",()=>{
+  window.setTimeout(scrollToHash,80);
+  window.setTimeout(scrollToHash,520);
+});
 updateProgress();
 
 document.querySelectorAll("[data-copy]").forEach((button)=>{
